@@ -40,10 +40,11 @@ validate_args_for_array(const std::vector<std::shared_ptr<Object>> &args,
     ss << "wrong number of arguments. got=" << args.size() << ", want=" << argc;
     throw make_error(ss.str());
   }
+
   auto arg = args[0];
   if (arg->type() != ARRAY_OBJ) {
     std::stringstream ss;
-    ss << "argument to `" << name << "` must be ARRAY, got " << arg->type();
+    ss << "argument to `" << name << "` must be ARRAY, got " << arg->name();
     throw make_error(ss.str());
   }
 }
@@ -57,16 +58,20 @@ inline void setup_built_in_functions(Environment &env) {
           throw make_error(ss.str());
         }
         auto arg = args[0];
-        if (arg->type() == STRING_OBJ) {
+        switch (arg->type()) {
+        case STRING_OBJ: {
           const auto &s = cast<String>(arg).value;
           return make_integer(s.size());
-        } else if (arg->type() == ARRAY_OBJ) {
+        }
+        case ARRAY_OBJ: {
           const auto &arr = cast<Array>(arg);
           return make_integer(arr.elements.size());
-        } else {
+        }
+        default: {
           std::stringstream ss;
-          ss << "argument to `len` not supported, got " << arg->type();
+          ss << "argument to `len` not supported, got " << arg->name();
           throw make_error(ss.str());
+        }
         }
       }));
 

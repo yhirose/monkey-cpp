@@ -25,7 +25,7 @@ struct Evaluator {
   std::shared_ptr<Object>
   eval_minus_operator_expression(const std::shared_ptr<Object> &right) {
     if (right->type() != INTEGER_OBJ) {
-      throw make_error("unknown operator: -" + right->type());
+      throw make_error("unknown operator: -" + right->name());
     }
     auto val = cast<Integer>(right).value;
     return std::make_shared<Integer>(-val);
@@ -44,7 +44,7 @@ struct Evaluator {
       switch (ope[0]) {
       case '-': right = eval_minus_operator_expression(right); break;
       case '!': right = eval_bang_operator_expression(right); break;
-      default: throw make_error("unknown operator: " + ope + right->type());
+      default: throw make_error("unknown operator: " + ope + right->name());
       }
       ++rit;
     }
@@ -72,8 +72,8 @@ struct Evaluator {
     case "=="_: return make_bool(lval == rval);
     case "!="_: return make_bool(lval != rval);
     default:
-      throw make_error("unknown operator: " + left->type() + " " + ope + " " +
-                       right->type());
+      throw make_error("unknown operator: " + left->name() + " " + ope + " " +
+                       right->name());
     }
   }
 
@@ -84,8 +84,8 @@ struct Evaluator {
     auto tag = peg::str2tag(ope.c_str());
 
     if (tag != "+"_) {
-      throw make_error("unknown operator: " + left->type() + " " + ope + " " +
-                       right->type());
+      throw make_error("unknown operator: " + left->name() + " " + ope + " " +
+                       right->name());
     }
 
     auto lval = cast<String>(left).value;
@@ -113,12 +113,12 @@ struct Evaluator {
     }
 
     if (left->type() != right->type()) {
-      throw make_error("type mismatch: " + left->type() + " " + ope + " " +
-                       right->type());
+      throw make_error("type mismatch: " + left->name() + " " + ope + " " +
+                       right->name());
     }
 
-    throw make_error("unknown operator: " + left->type() + " " + ope + " " +
-                     right->type());
+    throw make_error("unknown operator: " + left->name() + " " + ope + " " +
+                     right->name());
   }
 
   bool is_truthy(const std::shared_ptr<Object> &obj) {
@@ -250,9 +250,9 @@ struct Evaluator {
                              const std::shared_ptr<Object> &index) {
     const auto &hash = cast<Hash>(left);
     if (!index->has_hash_key()) {
-      throw make_error("unusable as hash key: " + index->type());
+      throw make_error("unusable as hash key: " + index->name());
     }
-    auto &hashed = index->hash_key();
+    auto hashed = index->hash_key();
     auto it = hash.pairs.find(hashed);
     if (it == hash.pairs.end()) { return CONST_NULL; }
     const auto &pair = it->second;
@@ -263,12 +263,10 @@ struct Evaluator {
   eval_index_expression(const Ast &node, std::shared_ptr<Environment> env,
                         const std::shared_ptr<Object> &left) {
     auto index = eval(node, env);
-    if (left->type() == ARRAY_OBJ) {
-      return eval_array_index_expression(left, index);
-    } else if (left->type() == HASH_OBJ) {
-      return eval_hash_index_expression(left, index);
-    } else {
-      return make_error("index operator not supported: " + left->type());
+    switch (left->type()) {
+    case ARRAY_OBJ: return eval_array_index_expression(left, index);
+    case HASH_OBJ: return eval_hash_index_expression(left, index);
+    default: return make_error("index operator not supported: " + left->name());
     }
   }
 
@@ -314,9 +312,9 @@ struct Evaluator {
       const auto &pair = *node.nodes[i];
       auto key = eval(*pair.nodes[0], env);
       if (!key->has_hash_key()) {
-        throw make_error("unusable as hash key: " + key->type());
+        throw make_error("unusable as hash key: " + key->name());
       }
-      auto &hashed = key->hash_key();
+      auto hashed = key->hash_key();
       auto value = eval(*pair.nodes[1], env);
       hash->pairs.emplace(hashed, HashPair{key, value});
     }

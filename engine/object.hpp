@@ -6,37 +6,38 @@ namespace monkey {
 
 struct Environment;
 
-const std::string INTEGER_OBJ = "INTEGER";
-const std::string BOOLEAN_OBJ = "BOOLEAN";
-const std::string NULL_OBJ = "NULL";
-const std::string ERROR_OBJ = "ERROR";
-const std::string FUNCTION_OBJ = "FUNCTION";
-const std::string STRING_OBJ = "STRING";
-const std::string BUILTIN_OBJ = "BUILTIN";
-const std::string ARRAY_OBJ = "ARRAY";
-const std::string HASH_OBJ = "HASH";
+enum ObjectType {
+  INTEGER_OBJ = 0,
+  BOOLEAN_OBJ,
+  NULL_OBJ,
+  ERROR_OBJ,
+  FUNCTION_OBJ,
+  STRING_OBJ,
+  BUILTIN_OBJ,
+  ARRAY_OBJ,
+  HASH_OBJ
+};
 
 struct HashKey {
-  HashKey(const std::string &type, uint64_t value) : type(type), value(value) {}
-
+  HashKey(ObjectType type, uint64_t value) : type(type), value(value) {}
   bool operator==(const HashKey &rhs) const {
     return type == rhs.type && value == rhs.value;
   }
-
   bool operator<(const HashKey &rhs) const {
     return type == rhs.type ? value < rhs.value : type < rhs.type;
   }
 
-  std::string type;
+  ObjectType type;
   uint64_t value;
 };
 
 struct Object {
   virtual ~Object() {}
-  virtual const std::string &type() const = 0;
+  virtual ObjectType type() const = 0;
+  virtual std::string name() const = 0;
   virtual std::string inspect() const = 0;
   virtual bool has_hash_key() const { return false; };
-  virtual const HashKey &hash_key() const {
+  virtual HashKey hash_key() const {
     throw std::logic_error("invalid internal condition.");
   };
 
@@ -50,51 +51,41 @@ template <typename T> inline T &cast(std::shared_ptr<Object> obj) {
 
 struct Integer : public Object {
   Integer(int64_t value) : value(value) {}
-  const std::string &type() const override { return INTEGER_OBJ; }
+  ObjectType type() const override { return INTEGER_OBJ; }
+  std::string name() const override { return "INTEGER"; }
   std::string inspect() const override { return std::to_string(value); }
   bool has_hash_key() const override { return true; }
-  const HashKey &hash_key() const override {
-    if (!hash_key_) {
-      hash_key_ =
-          std::make_shared<HashKey>(type(), static_cast<uint64_t>(value));
-    }
-    return *hash_key_;
+  HashKey hash_key() const override {
+    return HashKey{type(), static_cast<uint64_t>(value)};
   }
 
   const int64_t value;
-
-private:
-  mutable std::shared_ptr<HashKey> hash_key_;
 };
 
 struct Boolean : public Object {
   Boolean(bool value) : value(value) {}
-  const std::string &type() const override { return BOOLEAN_OBJ; }
+  ObjectType type() const override { return BOOLEAN_OBJ; }
+  std::string name() const override { return "BOOLEAN"; }
   std::string inspect() const override { return value ? "true" : "false"; }
   bool has_hash_key() const override { return true; }
-  const HashKey &hash_key() const override {
-    if (!hash_key_) {
-      hash_key_ = std::make_shared<HashKey>(
-          type(), static_cast<uint64_t>(value ? 1 : 0));
-    }
-    return *hash_key_;
+  HashKey hash_key() const override {
+    return HashKey{type(), static_cast<uint64_t>(value ? 1 : 0)};
   }
 
   const bool value;
-
-private:
-  mutable std::shared_ptr<HashKey> hash_key_;
 };
 
 struct Null : public Object {
   Null() {}
-  const std::string &type() const override { return NULL_OBJ; }
+  ObjectType type() const override { return NULL_OBJ; }
+  std::string name() const override { return "NULL"; }
   std::string inspect() const override { return "null"; }
 };
 
 struct Error : public Object {
   Error(const std::string &message) : message(message) {}
-  const std::string &type() const override { return ERROR_OBJ; }
+  ObjectType type() const override { return ERROR_OBJ; }
+  std::string name() const override { return "ERROR"; }
   std::string inspect() const override { return "ERROR: " + message; }
   const std::string message;
 };
@@ -104,7 +95,8 @@ struct Function : public Object {
            std::shared_ptr<Environment> env, std::shared_ptr<Ast> body)
       : params(params), env(env), body(body) {}
 
-  const std::string &type() const override { return FUNCTION_OBJ; }
+  ObjectType type() const override { return FUNCTION_OBJ; }
+  std::string name() const override { return "FUNCTION"; }
 
   std::string inspect() const override {
     std::stringstream ss;
@@ -125,14 +117,14 @@ struct Function : public Object {
 };
 
 // https://docs.microsoft.com/en-us/cpp/porting/fix-your-dependencies-on-library-internals?view=vs-2019
-inline uint64_t fnv1a_hash_bytes(const unsigned char *first, size_t count) {
+inline uint64_t fnv1a_hash_bytes(const char *first, size_t count) {
   const uint64_t fnv_offset_basis = 14695981039346656037ULL;
   const uint64_t fnv_prime = 1099511628211ULL;
 
   uint64_t result = fnv_offset_basis;
   for (size_t next = 0; next < count; ++next) {
     // fold in another byte
-    result ^= (size_t)first[next];
+    result ^= (uint64_t)first[next];
     result *= fnv_prime;
   }
   return (result);
@@ -140,22 +132,16 @@ inline uint64_t fnv1a_hash_bytes(const unsigned char *first, size_t count) {
 
 struct String : public Object {
   String(const std::string &value) : value(value) {}
-  const std::string &type() const override { return STRING_OBJ; }
+  ObjectType type() const override { return STRING_OBJ; }
+  std::string name() const override { return "STRING"; }
   std::string inspect() const override { return value; }
   bool has_hash_key() const override { return true; }
-  const HashKey &hash_key() const override {
-    if (!hash_key_) {
-      auto hash_value = fnv1a_hash_bytes(
-          reinterpret_cast<const unsigned char *>(value.data()), value.size());
-      hash_key_ = std::make_shared<HashKey>(type(), hash_value);
-    }
-    return *hash_key_;
+  HashKey hash_key() const override {
+    auto hash_value = fnv1a_hash_bytes(value.data(), value.size());
+    return HashKey{type(), hash_value};
   }
 
   const std::string value;
-
-private:
-  mutable std::shared_ptr<HashKey> hash_key_;
 };
 
 using Fn = std::function<std::shared_ptr<Object>(
@@ -163,13 +149,15 @@ using Fn = std::function<std::shared_ptr<Object>(
 
 struct Builtin : public Object {
   Builtin(Fn fn) : fn(fn) {}
-  const std::string &type() const override { return BUILTIN_OBJ; }
+  ObjectType type() const override { return BUILTIN_OBJ; }
+  std::string name() const override { return "BUILTIN"; }
   std::string inspect() const override { return "builtin function"; }
   const Fn fn;
 };
 
 struct Array : public Object {
-  const std::string &type() const override { return ARRAY_OBJ; }
+  ObjectType type() const override { return ARRAY_OBJ; }
+  std::string name() const override { return "ARRAY"; }
   std::string inspect() const override {
     std::stringstream ss;
     ss << "[";
@@ -190,7 +178,8 @@ struct HashPair {
 };
 
 struct Hash : public Object {
-  const std::string &type() const override { return HASH_OBJ; }
+  ObjectType type() const override { return HASH_OBJ; }
+  std::string name() const override { return "HASH"; }
   std::string inspect() const override {
     std::stringstream ss;
     ss << "{";
