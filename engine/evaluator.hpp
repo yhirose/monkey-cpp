@@ -3,8 +3,6 @@
 #include <environment.hpp>
 #include <parser.hpp>
 
-using namespace peg::udl;
-
 namespace monkey {
 
 struct Evaluator {
@@ -55,6 +53,8 @@ struct Evaluator {
   eval_integer_infix_expression(const std::string &ope,
                                 const std::shared_ptr<Object> &left,
                                 const std::shared_ptr<Object> &right) {
+    using namespace peg::udl;
+
     auto tag = peg::str2tag(ope.c_str());
     auto lval = cast<Integer>(left).value;
     auto rval = cast<Integer>(right).value;
@@ -81,6 +81,8 @@ struct Evaluator {
   eval_string_infix_expression(const std::string &ope,
                                const std::shared_ptr<Object> &left,
                                const std::shared_ptr<Object> &right) {
+    using namespace peg::udl;
+
     auto tag = peg::str2tag(ope.c_str());
 
     if (tag != "+"_) {
@@ -95,6 +97,8 @@ struct Evaluator {
 
   std::shared_ptr<Object>
   eval_infix_expression(const Ast &node, std::shared_ptr<Environment> env) {
+    using namespace peg::udl;
+
     auto left = eval(*node.nodes[0], env);
     auto ope = node.nodes[1]->token;
     auto right = eval(*node.nodes[2], env);
@@ -272,6 +276,8 @@ struct Evaluator {
 
   std::shared_ptr<Object> eval_call(const Ast &node,
                                     std::shared_ptr<Environment> env) {
+    using namespace peg::udl;
+
     auto left = eval(*node.nodes[0], env);
 
     for (auto i = 1u; i < node.nodes.size(); i++) {
@@ -323,6 +329,8 @@ struct Evaluator {
 
   std::shared_ptr<Object> eval(const Ast &node,
                                std::shared_ptr<Environment> env) {
+    using namespace peg::udl;
+
     switch (node.tag) {
     case "INTEGER"_: return std::make_shared<Integer>(node.to_integer());
     case "BOOLEAN"_: return make_bool(node.to_bool());

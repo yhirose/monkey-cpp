@@ -118,16 +118,16 @@ struct Function : public Object {
 
 // https://docs.microsoft.com/en-us/cpp/porting/fix-your-dependencies-on-library-internals?view=vs-2019
 inline uint64_t fnv1a_hash_bytes(const char *first, size_t count) {
-  const uint64_t fnv_offset_basis = 14695981039346656037ULL;
-  const uint64_t fnv_prime = 1099511628211ULL;
+  const auto fnv_offset_basis = 14695981039346656037ULL;
+  const auto fnv_prime = 1099511628211ULL;
 
-  uint64_t result = fnv_offset_basis;
+  auto result = fnv_offset_basis;
   for (size_t next = 0; next < count; ++next) {
     // fold in another byte
-    result ^= (uint64_t)first[next];
+    result ^= static_cast<uint64_t>(first[next]);
     result *= fnv_prime;
   }
-  return (result);
+  return result;
 }
 
 struct String : public Object {

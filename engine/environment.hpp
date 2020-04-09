@@ -12,7 +12,7 @@ struct Environment {
 
   std::shared_ptr<Object>
   get(const std::string &s,
-      std::function<void(void)> error_handler = nullptr) const {
+      std::function<void(void)> error_handler) const {
     if (dictionary.find(s) != dictionary.end()) {
       return dictionary.at(s);
     } else if (outer) {
