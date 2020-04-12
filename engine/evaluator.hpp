@@ -30,7 +30,8 @@ struct Evaluator {
   }
 
   std::shared_ptr<Object>
-  eval_prefix_expression(const Ast &node, const std::shared_ptr<Environment> &env) {
+  eval_prefix_expression(const Ast &node,
+                         const std::shared_ptr<Environment> &env) {
     auto rit = node.nodes.rbegin();
     auto right = eval(**rit, env);
     ++rit;
@@ -96,7 +97,8 @@ struct Evaluator {
   }
 
   std::shared_ptr<Object>
-  eval_infix_expression(const Ast &node, const std::shared_ptr<Environment> &env) {
+  eval_infix_expression(const Ast &node,
+                        const std::shared_ptr<Environment> &env) {
     using namespace peg::udl;
 
     auto left = eval(*node.nodes[0], env);
@@ -125,6 +127,28 @@ struct Evaluator {
                      right->name());
   }
 
+  std::shared_ptr<Object>
+  eval_statements(const Ast &node, const std::shared_ptr<Environment> &env) {
+    if (node.is_token) {
+      return eval(node, env);
+    } else if (node.nodes.empty()) {
+      return CONST_NULL;
+    }
+    auto it = node.nodes.begin();
+    while (it != node.nodes.end() - 1) {
+      auto obj = eval(**it, env);
+      if (obj->type() == ObjectType::RETURN_OBJ) { return obj; }
+      ++it;
+    }
+    return eval(**it, env);
+  }
+
+  std::shared_ptr<Object> eval_block(const Ast &node,
+                                     const std::shared_ptr<Environment> &env) {
+    auto scopeEnv = std::make_shared<Environment>(env);
+    return eval(*node.nodes[0], scopeEnv);
+  }
+
   bool is_truthy(const std::shared_ptr<Object> &obj) {
     auto p = obj.get();
     if (p == CONST_NULL.get()) {
@@ -135,27 +159,6 @@ struct Evaluator {
       return false;
     }
     return true;
-  }
-
-  std::shared_ptr<Object> eval_statements(const Ast &node,
-                                          const std::shared_ptr<Environment> &env) {
-    if (node.is_token) {
-      return eval(node, env);
-    } else if (node.nodes.empty()) {
-      return CONST_NULL;
-    }
-    auto it = node.nodes.begin();
-    while (it != node.nodes.end() - 1) {
-      eval(**it, env);
-      ++it;
-    }
-    return eval(**it, env);
-  }
-
-  std::shared_ptr<Object> eval_block(const Ast &node,
-                                     const std::shared_ptr<Environment> &env) {
-    auto scopeEnv = std::make_shared<Environment>(env);
-    return eval(*node.nodes[0], scopeEnv);
   }
 
   std::shared_ptr<Object> eval_if(const Ast &node,
@@ -170,31 +173,28 @@ struct Evaluator {
     return CONST_NULL;
   }
 
-  void eval_return(const Ast &node, const std::shared_ptr<Environment> &env) {
-    if (node.nodes.empty()) {
-      throw CONST_NULL;
-    } else {
-      throw eval(*node.nodes[0], env);
-    }
+  std::shared_ptr<Object> eval_return(const Ast &node,
+                                      const std::shared_ptr<Environment> &env) {
+    return std::make_shared<Return>(eval(*node.nodes[0], env));
   }
 
-  std::shared_ptr<Object> eval_assignment(const Ast &node,
-                                          const std::shared_ptr<Environment> &env) {
+  std::shared_ptr<Object>
+  eval_assignment(const Ast &node, const std::shared_ptr<Environment> &env) {
     const auto &ident = node.nodes[0]->token;
     auto rval = eval(*node.nodes.back(), env);
     env->set(ident, rval);
     return rval;
   };
 
-  std::shared_ptr<Object> eval_identifier(const Ast &node,
-                                          const std::shared_ptr<Environment> &env) {
+  std::shared_ptr<Object>
+  eval_identifier(const Ast &node, const std::shared_ptr<Environment> &env) {
     return env->get(node.token, [&]() {
       throw make_error("identifier not found: " + node.token);
     });
   };
 
-  std::shared_ptr<Object> eval_function(const Ast &node,
-                                        const std::shared_ptr<Environment> &env) {
+  std::shared_ptr<Object>
+  eval_function(const Ast &node, const std::shared_ptr<Environment> &env) {
     std::vector<std::string> params;
     for (auto node : node.nodes[0]->nodes) {
       params.push_back(node->token);
@@ -228,9 +228,12 @@ struct Evaluator {
         auto val = eval(*arg, env);
         callEnv->set(name, val);
       }
-      try {
-        return eval(*fn.body, callEnv);
-      } catch (const std::shared_ptr<Object> &e) { return e; }
+
+      auto obj = eval(*fn.body, callEnv);
+      if (obj->type() == ObjectType::RETURN_OBJ) {
+        return cast<Return>(obj).value;
+      }
+      return obj;
     }
 
     return make_error("arguments error...");
@@ -264,7 +267,8 @@ struct Evaluator {
   }
 
   std::shared_ptr<Object>
-  eval_index_expression(const Ast &node, const std::shared_ptr<Environment> &env,
+  eval_index_expression(const Ast &node,
+                        const std::shared_ptr<Environment> &env,
                         const std::shared_ptr<Object> &left) {
     auto index = eval(node, env);
     switch (left->type()) {
@@ -339,7 +343,7 @@ struct Evaluator {
     case "STATEMENTS"_: return eval_statements(node, env);
     case "BLOCK"_: return eval_block(node, env);
     case "IF"_: return eval_if(node, env);
-    case "RETURN"_: eval_return(node, env);
+    case "RETURN"_: return eval_return(node, env);
     case "ASSIGNMENT"_: return eval_assignment(node, env);
     case "IDENTIFIER"_: return eval_identifier(node, env);
     case "FUNCTION"_: return eval_function(node, env);
@@ -358,8 +362,12 @@ struct Evaluator {
 inline std::shared_ptr<Object> eval(const std::shared_ptr<Ast> &ast,
                                     const std::shared_ptr<Environment> &env) {
   try {
-    return Evaluator().eval(*ast, env);
-  } catch (const std::shared_ptr<Object> &obj) { return obj; }
+    auto obj = Evaluator().eval(*ast, env);
+    if (obj->type() == ObjectType::RETURN_OBJ) {
+      return cast<Return>(obj).value;
+    }
+    return obj;
+  } catch (const std::shared_ptr<Object> &err) { return err; }
   return CONST_NULL;
 }
 

@@ -10,6 +10,7 @@ enum ObjectType {
   INTEGER_OBJ = 0,
   BOOLEAN_OBJ,
   NULL_OBJ,
+  RETURN_OBJ,
   ERROR_OBJ,
   FUNCTION_OBJ,
   STRING_OBJ,
@@ -80,6 +81,14 @@ struct Null : public Object {
   ObjectType type() const override { return NULL_OBJ; }
   std::string name() const override { return "NULL"; }
   std::string inspect() const override { return "null"; }
+};
+
+struct Return : public Object {
+  Return(const std::shared_ptr<Object> &value) : value(value) {}
+  ObjectType type() const override { return RETURN_OBJ; }
+  std::string name() const override { return "RETURN"; }
+  std::string inspect() const override { return value->inspect(); }
+  std::shared_ptr<Object> value;
 };
 
 struct Error : public Object {
