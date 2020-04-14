@@ -3,7 +3,7 @@
 Another implementation of Monkey programming language described in [Writing An Interpreter In Go](https://interpreterbook.com/).
 This is written in C++ and uses [cpp-peglib](https://github.com/yhirose/cpp-peglib) PEG library for lexter and parser.
 
-Macro system in Appendix A is not implemented, yet.
+In addition to the original Monkey language spec, this implementation supports the line comment. Macro system in Appendix A is not implemented, yet.
 
 ## Install
 
