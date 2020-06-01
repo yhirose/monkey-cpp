@@ -840,6 +840,8 @@ public:
 
   std::vector<std::shared_ptr<SemanticValues>> value_stack;
   size_t value_stack_size = 0;
+
+  std::vector<Definition*> rule_stack;
   std::vector<std::vector<std::shared_ptr<Ope>>> args_stack;
 
   bool in_token = false;
@@ -928,13 +930,13 @@ public:
       auto &sv = *value_stack[value_stack_size];
       if (!sv.empty()) {
         sv.clear();
-        sv.tags.clear();
+        if (!sv.tags.empty()) { sv.tags.clear(); }
       }
       sv.s_ = nullptr;
       sv.n_ = 0;
       sv.choice_count_ = 0;
       sv.choice_ = 0;
-      sv.tokens.clear();
+      if (!sv.tokens.empty()) { sv.tokens.clear(); }
     }
 
     auto &sv = *value_stack[value_stack_size++];
@@ -962,7 +964,7 @@ public:
       capture_scope_stack.emplace_back(std::map<std::string, std::string>());
     } else {
       auto &cs = capture_scope_stack[capture_scope_stack_size];
-      cs.clear();
+      if (!cs.empty()) { cs.clear(); }
     }
     capture_scope_stack_size++;
   }
@@ -1070,8 +1072,7 @@ public:
         c.pop();
         c.pop_capture_scope();
       });
-      const auto &rule = *ope;
-      auto len = rule.parse(s, n, chldsv, c, dt);
+      auto len = ope->parse(s, n, chldsv, c, dt);
       if (success(len)) {
         if (!chldsv.empty()) {
           for (size_t i = 0; i < chldsv.size(); i++) {
@@ -1224,8 +1225,7 @@ public:
       c.pop();
       c.pop_capture_scope();
     });
-    const auto &rule = *ope_;
-    auto len = rule.parse(s, n, chldsv, c, dt);
+    auto len = ope_->parse(s, n, chldsv, c, dt);
     if (success(len)) {
       c.set_error_pos(s);
       return static_cast<size_t>(-1);
@@ -1255,7 +1255,11 @@ public:
 class LiteralString : public Ope,
                       public std::enable_shared_from_this<LiteralString> {
 public:
-  LiteralString(const std::string &s, bool ignore_case)
+  LiteralString(std::string &&s, bool ignore_case)
+      : lit_(s), ignore_case_(ignore_case), init_is_word_(false),
+        is_word_(false) {}
+
+  LiteralString(const std::string& s, bool ignore_case)
       : lit_(s), ignore_case_(ignore_case), init_is_word_(false),
         is_word_(false) {}
 
@@ -1614,11 +1618,11 @@ inline std::shared_ptr<Ope> dic(const std::vector<std::string> &v) {
   return std::make_shared<Dictionary>(v);
 }
 
-inline std::shared_ptr<Ope> lit(const std::string &s) {
+inline std::shared_ptr<Ope> lit(std::string &&s) {
   return std::make_shared<LiteralString>(s, false);
 }
 
-inline std::shared_ptr<Ope> liti(const std::string &s) {
+inline std::shared_ptr<Ope> liti(std::string &&s) {
   return std::make_shared<LiteralString>(s, true);
 }
 
@@ -2378,8 +2382,8 @@ inline size_t parse_literal(const char *s, size_t n, SemanticValues &sv,
   }
 
   if (is_word) {
-    auto ope = std::make_shared<NotPredicate>(c.wordOpe);
-    auto len = ope->parse(s + i, n - i, dummy_sv, dummy_c, dummy_dt);
+    NotPredicate ope(c.wordOpe);
+    auto len = ope.parse(s + i, n - i, dummy_sv, dummy_c, dummy_dt);
     if (fail(len)) { return static_cast<size_t>(-1); }
     i += len;
   }
@@ -2452,10 +2456,9 @@ inline size_t TokenBoundary::parse_core(const char *s, size_t n,
                                         any &dt) const {
   c.in_token = true;
   auto se = make_scope_exit([&]() { c.in_token = false; });
-  const auto &rule = *ope_;
-  auto len = rule.parse(s, n, sv, c, dt);
+  auto len = ope_->parse(s, n, sv, c, dt);
   if (success(len)) {
-    sv.tokens.push_back(std::make_pair(s, len));
+    sv.tokens.emplace_back(std::make_pair(s, len));
 
     if (c.whitespaceOpe) {
       auto l = c.whitespaceOpe->parse(s + len, n - len, sv, c, dt);
@@ -2474,7 +2477,12 @@ inline size_t Holder::parse_core(const char *s, size_t n, SemanticValues &sv,
 
   // Macro reference
   // TODO: need packrat support
-  if (outer_->is_macro) { return ope_->parse(s, n, sv, c, dt); }
+  if (outer_->is_macro) {
+    c.rule_stack.push_back(outer_);
+    auto len = ope_->parse(s, n, sv, c, dt);
+    c.rule_stack.pop_back();
+    return len;
+  }
 
   size_t len;
   any val;
@@ -2490,7 +2498,9 @@ inline size_t Holder::parse_core(const char *s, size_t n, SemanticValues &sv,
 
     auto &chldsv = c.push();
 
+    c.rule_stack.push_back(outer_);
     len = ope_->parse(s, n, chldsv, c, dt);
+    c.rule_stack.pop_back();
 
     // Invoke action
     if (success(len)) {
@@ -2519,7 +2529,7 @@ inline size_t Holder::parse_core(const char *s, size_t n, SemanticValues &sv,
 
   if (success(len)) {
     if (!outer_->ignoreSemanticValue) {
-      sv.emplace_back(val);
+      sv.emplace_back(std::move(val));
       sv.tags.emplace_back(str2tag(outer_->name.c_str()));
     }
   } else {
@@ -2555,13 +2565,13 @@ inline size_t Reference::parse_core(const char *s, size_t n, SemanticValues &sv,
     // Reference rule
     if (rule_->is_macro) {
       // Macro
-      FindReference vis(c.top_args(), rule_->params);
+      FindReference vis(c.top_args(), c.rule_stack.back()->params);
 
       // Collect arguments
       std::vector<std::shared_ptr<Ope>> args;
       for (auto arg : args_) {
         arg->accept(vis);
-        args.push_back(vis.found_ope);
+        args.emplace_back(std::move(vis.found_ope));
       }
 
       c.push_args(std::move(args));
@@ -2570,6 +2580,8 @@ inline size_t Reference::parse_core(const char *s, size_t n, SemanticValues &sv,
       return ope->parse(s, n, sv, c, dt);
     } else {
       // Definition
+      c.push_args(std::vector<std::shared_ptr<Ope>>());
+      auto se = make_scope_exit([&]() { c.pop_args(); });
       auto ope = get_core_operator();
       return ope->parse(s, n, sv, c, dt);
     }
@@ -3136,7 +3148,7 @@ private:
         case Loop::Type::opt: return opt(ope);
         case Loop::Type::zom: return zom(ope);
         case Loop::Type::oom: return oom(ope);
-        case Loop::Type::rep: // Regex-like repetition
+        default: // Regex-like repetition
           return rep(ope, loop.range.first, loop.range.second);
         }
       }
@@ -3527,9 +3539,10 @@ private:
 
 template <typename Annotation> struct AstBase : public Annotation {
   AstBase(const char *a_path, size_t a_line, size_t a_column,
-          const char *a_name, size_t a_position, size_t a_length,
-          size_t a_choice_count, size_t a_choice,
-          const std::vector<std::shared_ptr<AstBase>> &a_nodes)
+          const char *a_name,
+          const std::vector<std::shared_ptr<AstBase>> &a_nodes,
+          size_t a_position = 0, size_t a_length = 0, size_t a_choice_count = 0,
+          size_t a_choice = 0)
       : path(a_path ? a_path : ""), line(a_line), column(a_column),
         name(a_name), position(a_position), length(a_length),
         choice_count(a_choice_count), choice(a_choice), original_name(a_name),
@@ -3538,8 +3551,8 @@ template <typename Annotation> struct AstBase : public Annotation {
         nodes(a_nodes) {}
 
   AstBase(const char *a_path, size_t a_line, size_t a_column,
-          const char *a_name, size_t a_position, size_t a_length,
-          size_t a_choice_count, size_t a_choice, const std::string &a_token)
+          const char *a_name, const std::string &a_token, size_t a_position = 0,
+          size_t a_length = 0, size_t a_choice_count = 0, size_t a_choice = 0)
       : path(a_path ? a_path : ""), line(a_line), column(a_column),
         name(a_name), position(a_position), length(a_length),
         choice_count(a_choice_count), choice(a_choice), original_name(a_name),
@@ -3547,9 +3560,9 @@ template <typename Annotation> struct AstBase : public Annotation {
         tag(str2tag(a_name)), original_tag(tag), is_token(true),
         token(a_token) {}
 
-  AstBase(const AstBase &ast, const char *a_original_name, size_t a_position,
-          size_t a_length, size_t a_original_choice_count,
-          size_t a_original_choise)
+  AstBase(const AstBase &ast, const char *a_original_name,
+          size_t a_position = 0, size_t a_length = 0,
+          size_t a_original_choice_count = 0, size_t a_original_choise = 0)
       : path(ast.path), line(ast.line), column(ast.column), name(ast.name),
         position(a_position), length(a_length), choice_count(ast.choice_count),
         choice(ast.choice), original_name(a_original_name),
@@ -3613,16 +3626,16 @@ ast_to_s(const std::shared_ptr<T> &ptr,
 }
 
 struct AstOptimizer {
-  AstOptimizer(bool optimize_nodes,
-               const std::vector<std::string> &filters = {})
-      : optimize_nodes_(optimize_nodes), filters_(filters) {}
+  AstOptimizer(bool mode,
+               const std::vector<std::string> &rules = {})
+      : mode_(mode), rules_(rules) {}
 
   template <typename T>
   std::shared_ptr<T> optimize(std::shared_ptr<T> original,
                               std::shared_ptr<T> parent = nullptr) {
-    auto found = std::find(filters_.begin(), filters_.end(), original->name) !=
-                 filters_.end();
-    bool opt = optimize_nodes_ ? !found : found;
+    auto found = std::find(rules_.begin(), rules_.end(), original->name) !=
+                 rules_.end();
+    bool opt = mode_ ? !found : found;
 
     if (opt && original->nodes.size() == 1) {
       auto child = optimize(original->nodes[0], parent);
@@ -3642,8 +3655,8 @@ struct AstOptimizer {
   }
 
 private:
-  const bool optimize_nodes_;
-  const std::vector<std::string> filters_;
+  const bool mode_;
+  const std::vector<std::string> rules_;
 };
 
 struct EmptyType {};
@@ -3787,15 +3800,16 @@ public:
 
           if (rule.is_token()) {
             return std::make_shared<T>(
-                sv.path, line.first, line.second, name.c_str(),
+                sv.path, line.first, line.second, name.c_str(), sv.token(),
                 std::distance(sv.ss, sv.c_str()), sv.length(),
-                sv.choice_count(), sv.choice(), sv.token());
+                sv.choice_count(), sv.choice());
           }
 
           auto ast = std::make_shared<T>(
               sv.path, line.first, line.second, name.c_str(),
+              sv.transform<std::shared_ptr<T>>(),
               std::distance(sv.ss, sv.c_str()), sv.length(), sv.choice_count(),
-              sv.choice(), sv.transform<std::shared_ptr<T>>());
+              sv.choice());
 
           for (auto node : ast->nodes) {
             node->parent = ast;

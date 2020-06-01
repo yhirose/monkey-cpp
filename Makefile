@@ -1,6 +1,6 @@
 CXXFLAGS = -std=c++17 -Wall -Wextra -Iengine
 
-MONKEY_SOURCE = engine/object.hpp engine/ast.hpp engine/parser.hpp engine/environment.hpp engine/evaluator.hpp
+MONKEY_SOURCE = engine/object.hpp engine/ast.hpp engine/parser.hpp engine/environment.hpp engine/evaluator.hpp engine/peglib.h
 
 CLI_HEADER = cli/repl.hpp cli/repl.hpp
 CLI_SOURCE = cli/main.cpp
