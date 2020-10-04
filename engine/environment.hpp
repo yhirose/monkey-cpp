@@ -2,7 +2,6 @@
 
 #include <map>
 #include <object.hpp>
-#include <sstream>
 
 namespace monkey {
 
@@ -10,9 +9,8 @@ struct Environment {
   Environment(std::shared_ptr<Environment> outer = nullptr)
       : level(outer ? outer->level + 1 : 0), outer(outer) {}
 
-  std::shared_ptr<Object>
-  get(const std::string &s,
-      std::function<void(void)> error_handler) const {
+  std::shared_ptr<Object> get(std::string_view s,
+                              std::function<void(void)> error_handler) const {
     if (dictionary.find(s) != dictionary.end()) {
       return dictionary.at(s);
     } else if (outer) {
@@ -23,13 +21,13 @@ struct Environment {
     throw std::logic_error("invalid internal condition.");
   }
 
-  void set(const std::string &s, std::shared_ptr<Object> val) {
+  void set(std::string_view s, std::shared_ptr<Object> val) {
     dictionary[s] = std::move(val);
   }
 
   size_t level;
   std::shared_ptr<Environment> outer;
-  std::map<std::string, std::shared_ptr<Object>> dictionary;
+  std::map<std::string_view, std::shared_ptr<Object>> dictionary;
 };
 
 inline void

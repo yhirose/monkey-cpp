@@ -7,7 +7,7 @@ using namespace monkey;
 
 void testIntegerLiteral(const shared_ptr<Ast> &ast, int64_t number) {
   CHECK(ast->tag == "INTEGER"_);
-  CHECK(peg::any_cast<int64_t>(ast->value) == number);
+  CHECK(any_cast<int64_t>(ast->value) == number);
 }
 
 void testIdentifier(const shared_ptr<Ast> &ast, const string &token) {
@@ -17,7 +17,7 @@ void testIdentifier(const shared_ptr<Ast> &ast, const string &token) {
 
 void testBooleanLiteral(const shared_ptr<Ast> &ast, int64_t value) {
   CHECK(ast->tag == "BOOLEAN"_);
-  CHECK(peg::any_cast<bool>(ast->value) == value);
+  CHECK(any_cast<bool>(ast->value) == value);
 }
 
 void testStringLiteral(const shared_ptr<Ast> &ast, const char *token) {
@@ -25,20 +25,16 @@ void testStringLiteral(const shared_ptr<Ast> &ast, const char *token) {
   CHECK(ast->token == token);
 }
 
-void testLiteralExpression(const shared_ptr<Ast> &ast, peg::any value) {
+void testLiteralExpression(const shared_ptr<Ast> &ast, any value) {
   switch (ast->tag) {
-  case "INTEGER"_:
-    testIntegerLiteral(ast, peg::any_cast<int64_t>(value));
-    break;
-  case "IDENTIFIER"_:
-    testIdentifier(ast, peg::any_cast<const char *>(value));
-    break;
-  case "BOOLEAN"_: testBooleanLiteral(ast, peg::any_cast<bool>(value)); break;
+  case "INTEGER"_: testIntegerLiteral(ast, any_cast<int64_t>(value)); break;
+  case "IDENTIFIER"_: testIdentifier(ast, any_cast<const char *>(value)); break;
+  case "BOOLEAN"_: testBooleanLiteral(ast, any_cast<bool>(value)); break;
   }
 }
 
-void testInfixExpression(const shared_ptr<Ast> &ast, peg::any leftValue,
-                         const string &operatorToken, peg::any rightValue) {
+void testInfixExpression(const shared_ptr<Ast> &ast, any leftValue,
+                         const string &operatorToken, any rightValue) {
   CHECK(ast->tag == "INFIX_EXPR"_);
 
   testLiteralExpression(ast->nodes[0], leftValue);
@@ -53,7 +49,7 @@ TEST_CASE("'let' statements", "[parser]") {
   struct Test {
     string input;
     string expectedIdentifier;
-    peg::any expectedValue;
+    any expectedValue;
   };
 
   Test tests[] = {
@@ -75,7 +71,7 @@ TEST_CASE("'let' statements", "[parser]") {
 TEST_CASE("'return' statements", "[parser]") {
   struct Test {
     string input;
-    peg::any expectedValue;
+    any expectedValue;
   };
 
   Test tests[] = {
@@ -109,7 +105,7 @@ TEST_CASE("Parsing prefix expression", "[parser]") {
   struct Test {
     string input;
     string operatorToken;
-    peg::any value;
+    any value;
   };
 
   Test tests[] = {
@@ -133,9 +129,9 @@ TEST_CASE("Parsing prefix expression", "[parser]") {
 TEST_CASE("Parsing infix expression", "[parser]") {
   struct Test {
     string input;
-    peg::any leftValue;
+    any leftValue;
     string operatorToken;
-    peg::any rightValue;
+    any rightValue;
   };
 
   Test tests[] = {
@@ -475,10 +471,10 @@ TEST_CASE("Parsing hash literals string keys", "[parser]") {
   REQUIRE(ast != nullptr);
   REQUIRE(ast->tag == "HASH"_);
 
-  map<string, int64_t> expected = {
-      {"one", 1},
-      {"two", 2},
-      {"three", 3},
+  map<string_view, int64_t> expected = {
+      {"one"sv, 1},
+      {"two"sv, 2},
+      {"three"sv, 3},
   };
 
   for (const auto &node : ast->nodes) {
@@ -497,9 +493,9 @@ TEST_CASE("Parsing hash literals boolean keys", "[parser]") {
   REQUIRE(ast != nullptr);
   REQUIRE(ast->tag == "HASH"_);
 
-  map<string, int64_t> expected = {
-      {"true", 1},
-      {"false", 2},
+  map<string_view, int64_t> expected = {
+      {"true"sv, 1},
+      {"false"sv, 2},
   };
 
   for (const auto &node : ast->nodes) {
@@ -516,10 +512,10 @@ TEST_CASE("Parsing hash literals integer keys", "[parser]") {
   auto input = "{1: 1, 2: 2, 3: 3}";
   auto ast = parse("([parser]: Parsing hash literals integer keys)", input);
 
-  map<string, int64_t> expected = {
-      {"1", 1},
-      {"2", 2},
-      {"3", 3},
+  map<string_view, int64_t> expected = {
+      {"1"sv, 1},
+      {"2"sv, 2},
+      {"3"sv, 3},
   };
 
   for (const auto &node : ast->nodes) {
@@ -539,21 +535,21 @@ TEST_CASE("Parsing hash literals with expression", "[parser]") {
   REQUIRE(ast->tag == "HASH"_);
 
   using TestFunc = function<void(const shared_ptr<Ast> &ast)>;
-  map<string, TestFunc> tests = {
+  map<string_view, TestFunc> tests = {
       {
-          "one",
+          "one"sv,
           [](auto &ast) {
             testInfixExpression(ast, int64_t(0), "+", int64_t(1));
           },
       },
       {
-          "two",
+          "two"sv,
           [](auto &ast) {
             testInfixExpression(ast, int64_t(10), "-", int64_t(8));
           },
       },
       {
-          "three",
+          "three"sv,
           [](auto &ast) {
             testInfixExpression(ast, int64_t(15), "/", int64_t(5));
           },

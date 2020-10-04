@@ -5,10 +5,10 @@
 namespace monkey {
 
 struct Annotation {
-  peg::any value;
+  std::any value;
 
-  bool to_bool() const { return peg::any_cast<bool>(value); }
-  int64_t to_integer() const { return peg::any_cast<int64_t>(value); }
+  bool to_bool() const { return std::any_cast<bool>(value); }
+  int64_t to_integer() const { return std::any_cast<int64_t>(value); }
 };
 
 using Ast = peg::AstBase<Annotation>;
@@ -20,7 +20,7 @@ inline void annotate(std::shared_ptr<Ast> &ast) {
     assert(ast->nodes.empty());
     switch (ast->tag) {
     case "BOOLEAN"_: ast->value = (ast->token == "true"); break;
-    case "INTEGER"_: ast->value = stoll(ast->token); break;
+    case "INTEGER"_: ast->value = ast->token_to_number<long long>(); break;
     case "STRING"_: ast->value = ast->token; break;
     }
   } else {
@@ -46,13 +46,13 @@ inline std::string to_string(const std::shared_ptr<Ast> &ast) {
   using namespace peg::udl;
 
   if (ast->is_token) {
-    return ast->token;
+    return std::string(ast->token);
   } else {
     std::string out;
     switch (ast->tag) {
     case "ASSIGNMENT"_: {
-      out = "let " + ast->nodes[0]->token + " = " + to_string(ast->nodes[1]) +
-            ";";
+      out = "let " + std::string(ast->nodes[0]->token) + " = " +
+            to_string(ast->nodes[1]) + ";";
       break;
     }
     case "PREFIX_EXPR"_: {
@@ -61,14 +61,15 @@ inline std::string to_string(const std::shared_ptr<Ast> &ast) {
       ++rit;
       while (rit != ast->nodes.rend()) {
         auto ope = (**rit).token;
-        out = '(' + ope + out + ')';
+        out = '(' + std::string(ope) + out + ')';
         ++rit;
       }
       break;
     }
     case "INFIX_EXPR"_:
-      out = '(' + to_string(ast->nodes[0]) + ' ' + ast->nodes[1]->token + ' ' +
-            to_string(ast->nodes[2]) + ')';
+      out = '(' + to_string(ast->nodes[0]) + ' ' +
+            std::string(ast->nodes[1]->token) + ' ' + to_string(ast->nodes[2]) +
+            ')';
       break;
     case "CALL"_: {
       auto it = ast->nodes.begin();

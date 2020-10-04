@@ -43,7 +43,9 @@ struct Evaluator {
       switch (ope[0]) {
       case '-': right = eval_minus_operator_expression(right); break;
       case '!': right = eval_bang_operator_expression(right); break;
-      default: throw make_error("unknown operator: " + ope + right->name());
+      default:
+        throw make_error("unknown operator: " + std::string(ope) +
+                         right->name());
       }
       ++rit;
     }
@@ -51,12 +53,12 @@ struct Evaluator {
   }
 
   std::shared_ptr<Object>
-  eval_integer_infix_expression(const std::string &ope,
+  eval_integer_infix_expression(std::string_view ope,
                                 const std::shared_ptr<Object> &left,
                                 const std::shared_ptr<Object> &right) {
     using namespace peg::udl;
 
-    auto tag = peg::str2tag(ope.c_str());
+    auto tag = peg::str2tag(ope);
     auto lval = cast<Integer>(left).value;
     auto rval = cast<Integer>(right).value;
 
@@ -73,22 +75,22 @@ struct Evaluator {
     case "=="_: return make_bool(lval == rval);
     case "!="_: return make_bool(lval != rval);
     default:
-      throw make_error("unknown operator: " + left->name() + " " + ope + " " +
-                       right->name());
+      throw make_error("unknown operator: " + left->name() + " " +
+                       std::string(ope) + " " + right->name());
     }
   }
 
   std::shared_ptr<Object>
-  eval_string_infix_expression(const std::string &ope,
+  eval_string_infix_expression(std::string_view &ope,
                                const std::shared_ptr<Object> &left,
                                const std::shared_ptr<Object> &right) {
     using namespace peg::udl;
 
-    auto tag = peg::str2tag(ope.c_str());
+    auto tag = peg::str2tag(ope);
 
     if (tag != "+"_) {
-      throw make_error("unknown operator: " + left->name() + " " + ope + " " +
-                       right->name());
+      throw make_error("unknown operator: " + left->name() + " " +
+                       std::string(ope) + " " + right->name());
     }
 
     auto lval = cast<String>(left).value;
@@ -111,7 +113,7 @@ struct Evaluator {
       return eval_string_infix_expression(ope, left, right);
     }
 
-    auto tag = peg::str2tag(ope.c_str());
+    auto tag = peg::str2tag(ope);
 
     switch (tag) {
     case "=="_: return make_bool(left.get() == right.get());
@@ -119,12 +121,12 @@ struct Evaluator {
     }
 
     if (left->type() != right->type()) {
-      throw make_error("type mismatch: " + left->name() + " " + ope + " " +
-                       right->name());
+      throw make_error("type mismatch: " + left->name() + " " +
+                       std::string(ope) + " " + right->name());
     }
 
-    throw make_error("unknown operator: " + left->name() + " " + ope + " " +
-                     right->name());
+    throw make_error("unknown operator: " + left->name() + " " +
+                     std::string(ope) + " " + right->name());
   }
 
   std::shared_ptr<Object>
@@ -180,7 +182,7 @@ struct Evaluator {
 
   std::shared_ptr<Object>
   eval_assignment(const Ast &node, const std::shared_ptr<Environment> &env) {
-    const auto &ident = node.nodes[0]->token;
+    auto ident = node.nodes[0]->token;
     auto rval = eval(*node.nodes.back(), env);
     env->set(ident, rval);
     return rval;
@@ -189,13 +191,13 @@ struct Evaluator {
   std::shared_ptr<Object>
   eval_identifier(const Ast &node, const std::shared_ptr<Environment> &env) {
     return env->get(node.token, [&]() {
-      throw make_error("identifier not found: " + node.token);
+      throw make_error("identifier not found: " + std::string(node.token));
     });
   };
 
   std::shared_ptr<Object>
   eval_function(const Ast &node, const std::shared_ptr<Environment> &env) {
-    std::vector<std::string> params;
+    std::vector<std::string_view> params;
     for (auto node : node.nodes[0]->nodes) {
       params.push_back(node->token);
     }

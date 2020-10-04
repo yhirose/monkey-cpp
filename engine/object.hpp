@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ast.hpp>
+#include <sstream>
 
 namespace monkey {
 
@@ -100,7 +101,7 @@ struct Error : public Object {
 };
 
 struct Function : public Object {
-  Function(const std::vector<std::string> &params,
+  Function(const std::vector<std::string_view> &params,
            std::shared_ptr<Environment> env, std::shared_ptr<Ast> body)
       : params(params), env(env), body(body) {}
 
@@ -120,7 +121,7 @@ struct Function : public Object {
     return ss.str();
   }
 
-  const std::vector<std::string> params;
+  const std::vector<std::string_view> params;
   const std::shared_ptr<Environment> env;
   const std::shared_ptr<Ast> body;
 };
@@ -140,7 +141,7 @@ inline uint64_t fnv1a_hash_bytes(const char *first, size_t count) {
 }
 
 struct String : public Object {
-  String(const std::string &value) : value(value) {}
+  String(std::string_view value) : value(value) {}
   ObjectType type() const override { return STRING_OBJ; }
   std::string name() const override { return "STRING"; }
   std::string inspect() const override { return value; }
@@ -216,7 +217,7 @@ inline std::shared_ptr<Object> make_error(const std::string &s) {
   return std::make_shared<Error>(s);
 }
 
-inline std::shared_ptr<Object> make_string(const std::string &s) {
+inline std::shared_ptr<Object> make_string(std::string_view s) {
   return std::make_shared<String>(s);
 }
 
