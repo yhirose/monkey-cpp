@@ -15,6 +15,7 @@ using Opecode = uint8_t;
 enum OpecodeType {
   OpConstant = 0,
   OpAdd,
+  OpPop,
 };
 
 struct Definition {
@@ -26,6 +27,7 @@ inline std::map<Opecode, Definition> &definitions() {
   static auto definitions_ = std::map<Opecode, Definition>{
       {OpConstant, {"OpConstant", {2}}},
       {OpAdd, {"OpAdd", {}}},
+      {OpPop, {"OpPop", {}}},
   };
   return definitions_;
 }

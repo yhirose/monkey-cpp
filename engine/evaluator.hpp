@@ -347,6 +347,7 @@ struct Evaluator {
     case "IF"_: return eval_if(node, env);
     case "RETURN"_: return eval_return(node, env);
     case "ASSIGNMENT"_: return eval_assignment(node, env);
+    case "EXPRESSION_STATEMENT"_: return eval(*node.nodes[0], env);
     case "IDENTIFIER"_: return eval_identifier(node, env);
     case "FUNCTION"_: return eval_function(node, env);
     case "CALL"_: return eval_call(node, env);

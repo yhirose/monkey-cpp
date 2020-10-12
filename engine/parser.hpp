@@ -10,10 +10,11 @@ const auto GRAMMAR = R"(
 PROGRAM                <-  STATEMENTS
 
 STATEMENTS             <-  (STATEMENT ';'?)*
-STATEMENT              <-  ASSIGNMENT / RETURN / EXPRESSION
+STATEMENT              <-  ASSIGNMENT / RETURN / EXPRESSION_STATEMENT
 
 ASSIGNMENT             <-  'let' IDENTIFIER '=' EXPRESSION
 RETURN                 <-  'return' EXPRESSION
+EXPRESSION_STATEMENT   <-  EXPRESSION
 
 EXPRESSION             <-  INFIX_EXPR(PREFIX_EXPR, INFIX_OPE)
 INFIX_EXPR(ATOM, OPE)  <-  ATOM (OPE ATOM)* {
@@ -94,8 +95,9 @@ inline std::shared_ptr<Ast> parse(const std::string &path, const char *expr,
 
   std::shared_ptr<Ast> ast;
   if (parser.parse_n(expr, len, ast, path.c_str())) {
-    auto opt = peg::AstOptimizer(true, {"PARAMETERS", "ARGUMENTS", "INDEX",
-                                        "RETURN", "BLOCK", "ARRAY", "HASH"});
+    auto opt =
+        peg::AstOptimizer(true, {"EXPRESSION_STATEMENT", "PARAMETERS", "ARGUMENTS",
+                                 "INDEX", "RETURN", "BLOCK", "ARRAY", "HASH"});
 
     ast = opt.optimize(ast);
     annotate(ast);

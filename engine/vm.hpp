@@ -22,6 +22,10 @@ struct VM {
     return stack[sp - 1];
   }
 
+  std::shared_ptr<Object> last_popped_stack_elem() const {
+    return stack[sp];
+  }
+
   void run() {
     for (size_t ip = 0; ip < instructions.size(); ip++) {
       Opecode op = instructions[ip];
@@ -39,6 +43,10 @@ struct VM {
         auto right_value = cast<Integer>(right).value;
         auto result = left_value + right_value;
         push(make_integer(result));
+        break;
+      }
+      case OpPop: {
+        pop();
         break;
       }
       }

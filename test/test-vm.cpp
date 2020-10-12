@@ -34,7 +34,7 @@ void run_vm_test(const char *name, const vector<VmTestCase> &tests) {
     VM vm(compiler.bytecode());
     vm.run();
 
-    auto stack_elem = vm.stack_top();
+    auto stack_elem = vm.last_popped_stack_elem();
 
     test_expected_object(t.expected, stack_elem);
   }

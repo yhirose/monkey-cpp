@@ -66,6 +66,17 @@ TEST_CASE("Integer arithmetic", "[compiler]") {
               make(OpConstant, {0}),
               make(OpConstant, {1}),
               make(OpAdd, {}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          "1; 2",
+          {make_integer(1), make_integer(2)},
+          {
+              make(OpConstant, {0}),
+              make(OpPop, {}),
+              make(OpConstant, {1}),
+              make(OpPop, {}),
           },
       },
   };
