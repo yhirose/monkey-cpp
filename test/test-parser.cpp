@@ -6,22 +6,22 @@ using namespace peg::udl;
 using namespace monkey;
 
 void testIntegerLiteral(const shared_ptr<Ast> &ast, int64_t number) {
-  CHECK(ast->tag == "INTEGER"_);
+  CHECK(ast->name == "INTEGER");
   CHECK(any_cast<int64_t>(ast->value) == number);
 }
 
 void testIdentifier(const shared_ptr<Ast> &ast, const string &token) {
-  CHECK(ast->tag == "IDENTIFIER"_);
+  CHECK(ast->name == "IDENTIFIER");
   CHECK(ast->token == token);
 }
 
 void testBooleanLiteral(const shared_ptr<Ast> &ast, int64_t value) {
-  CHECK(ast->tag == "BOOLEAN"_);
+  CHECK(ast->name == "BOOLEAN");
   CHECK(any_cast<bool>(ast->value) == value);
 }
 
 void testStringLiteral(const shared_ptr<Ast> &ast, const char *token) {
-  CHECK(ast->tag == "STRING"_);
+  CHECK(ast->name == "STRING");
   CHECK(ast->token == token);
 }
 
@@ -35,11 +35,11 @@ void testLiteralExpression(const shared_ptr<Ast> &ast, any value) {
 
 void testInfixExpression(const shared_ptr<Ast> &ast, any leftValue,
                          const string &operatorToken, any rightValue) {
-  CHECK(ast->tag == "INFIX_EXPR"_);
+  CHECK(ast->name == "INFIX_EXPR");
 
   testLiteralExpression(ast->nodes[0], leftValue);
 
-  CHECK(ast->nodes[1]->tag == "INFIX_OPE"_);
+  CHECK(ast->nodes[1]->name == "INFIX_OPE");
   CHECK(ast->nodes[1]->token == operatorToken);
 
   testLiteralExpression(ast->nodes[2], rightValue);
@@ -61,7 +61,7 @@ TEST_CASE("'let' statements", "[parser]") {
   for (const auto &t : tests) {
     auto ast = parse("([parser]: 'let' statements)", t.input);
     REQUIRE(ast != nullptr);
-    REQUIRE(ast->tag == "ASSIGNMENT"_);
+    REQUIRE(ast->name == "ASSIGNMENT");
 
     testIdentifier(ast->nodes[0], t.expectedIdentifier);
     testLiteralExpression(ast->nodes[1], t.expectedValue);
@@ -83,7 +83,7 @@ TEST_CASE("'return' statements", "[parser]") {
   for (const auto &t : tests) {
     auto ast = parse("([parser]: 'return' statements)", t.input);
     REQUIRE(ast != nullptr);
-    REQUIRE(ast->tag == "RETURN"_);
+    REQUIRE(ast->name == "RETURN");
 
     testLiteralExpression(ast->nodes[0], t.expectedValue);
   }
@@ -92,13 +92,17 @@ TEST_CASE("'return' statements", "[parser]") {
 TEST_CASE("Identifier expression", "[parser]") {
   auto ast = parse("([parser]: Identifier expression)", "foobar;");
   REQUIRE(ast != nullptr);
-  testIdentifier(ast, "foobar");
+  REQUIRE(ast->name == "EXPRESSION_STATEMENT");
+
+  testIdentifier(ast->nodes[0], "foobar");
 }
 
 TEST_CASE("Integer literal expression", "[parser]") {
   auto ast = parse("([parser]: Integer literal expression)", "5;");
   REQUIRE(ast != nullptr);
-  testIntegerLiteral(ast, 5);
+  REQUIRE(ast->name == "EXPRESSION_STATEMENT");
+
+  testIntegerLiteral(ast->nodes[0], 5);
 }
 
 TEST_CASE("Parsing prefix expression", "[parser]") {
@@ -117,12 +121,15 @@ TEST_CASE("Parsing prefix expression", "[parser]") {
   for (const auto &t : tests) {
     auto ast = parse("([parser]: Parsing prefix expression)", t.input);
     REQUIRE(ast != nullptr);
-    REQUIRE(ast->tag == "PREFIX_EXPR"_);
+    REQUIRE(ast->name == "EXPRESSION_STATEMENT");
 
-    CHECK(ast->nodes[0]->tag == "PREFIX_OPE"_);
-    CHECK(ast->nodes[0]->token == t.operatorToken);
+    auto node = ast->nodes[0];
+    REQUIRE(node->name == "PREFIX_EXPR");
 
-    testLiteralExpression(ast->nodes[1], t.value);
+    CHECK(node->nodes[0]->name == "PREFIX_OPE");
+    CHECK(node->nodes[0]->token == t.operatorToken);
+
+    testLiteralExpression(node->nodes[1], t.value);
   }
 }
 
@@ -159,8 +166,9 @@ TEST_CASE("Parsing infix expression", "[parser]") {
   for (const auto &t : tests) {
     auto ast = parse("([parser]: Parsing infix expression)", t.input);
     REQUIRE(ast != nullptr);
+    REQUIRE(ast->name == "EXPRESSION_STATEMENT");
 
-    testInfixExpression(ast, t.leftValue, t.operatorToken, t.rightValue);
+    testInfixExpression(ast->nodes[0], t.leftValue, t.operatorToken, t.rightValue);
   }
 }
 
@@ -307,40 +315,56 @@ TEST_CASE("Boolean expression", "[parser]") {
   for (const auto &t : tests) {
     auto ast = parse("([parser]: Boolean expression)", t.input);
     REQUIRE(ast != nullptr);
+    REQUIRE(ast->name == "EXPRESSION_STATEMENT");
 
-    testBooleanLiteral(ast, t.expectedBoolean);
+    testBooleanLiteral(ast->nodes[0], t.expectedBoolean);
   }
 }
 
 TEST_CASE("If expression", "[parser]") {
   auto ast = parse("([parser]: If expression)", "if (x < y) { x };");
   REQUIRE(ast != nullptr);
-  REQUIRE(ast->tag == "IF"_);
+  REQUIRE(ast->name == "EXPRESSION_STATEMENT");
 
-  testInfixExpression(ast->nodes[0], "x", "<", "y");
-  testIdentifier(ast->nodes[1]->nodes[0], "x");
+  auto node = ast->nodes[0];
+  REQUIRE(node->name == "IF");
+
+  testInfixExpression(node->nodes[0], "x", "<", "y");
+  testIdentifier(node->nodes[1]->nodes[0]->nodes[0], "x");
 }
 
 TEST_CASE("If else expression", "[parser]") {
   auto ast =
       parse("([parser]: If else expression)", "if (x < y) { x } else { y };");
   REQUIRE(ast != nullptr);
-  REQUIRE(ast->tag == "IF"_);
+  REQUIRE(ast->name == "EXPRESSION_STATEMENT");
 
-  testInfixExpression(ast->nodes[0], "x", "<", "y");
-  testIdentifier(ast->nodes[1]->nodes[0], "x");
-  testIdentifier(ast->nodes[2]->nodes[0], "y");
+  auto node = ast->nodes[0];
+  REQUIRE(node->name == "IF");
+
+  testInfixExpression(node->nodes[0], "x", "<", "y");
+  testIdentifier(node->nodes[1]->nodes[0]->nodes[0], "x");
+  testIdentifier(node->nodes[2]->nodes[0]->nodes[0], "y");
 }
 
 TEST_CASE("Function literal parsing", "[parser]") {
   auto ast =
       parse("([parser]: Function literal parser)", "fn(x, y) { x + y; }");
   REQUIRE(ast != nullptr);
-  REQUIRE(ast->tag == "FUNCTION"_);
+  REQUIRE(ast->name == "EXPRESSION_STATEMENT");
 
-  testIdentifier(ast->nodes[0]->nodes[0], "x");
-  testIdentifier(ast->nodes[0]->nodes[1], "y");
-  testInfixExpression(ast->nodes[1]->nodes[0], "x", "+", "y");
+  auto node = ast->nodes[0];
+  REQUIRE(node->name == "FUNCTION");
+
+  testIdentifier(node->nodes[0]->nodes[0], "x");
+  testIdentifier(node->nodes[0]->nodes[1], "y");
+
+  {
+    const auto& node2 = node->nodes[1]->nodes[0];
+    REQUIRE(node2->name == "EXPRESSION_STATEMENT");
+
+    testInfixExpression(node2->nodes[0], "x", "+", "y");
+  }
 }
 
 TEST_CASE("Function parameter parsing", "[parser]") {
@@ -358,9 +382,12 @@ TEST_CASE("Function parameter parsing", "[parser]") {
   for (const auto &t : tests) {
     auto ast = parse("([parser]: Function parameter parsing)", t.input);
     REQUIRE(ast != nullptr);
-    REQUIRE(ast->tag == "FUNCTION"_);
+    REQUIRE(ast->name == "EXPRESSION_STATEMENT");
 
-    const auto &nodes = ast->nodes[0]->nodes;
+    auto node = ast->nodes[0];
+    REQUIRE(node->name == "FUNCTION");
+
+    auto nodes = node->nodes[0]->nodes;
     CHECK(nodes.size() == t.expectedParams.size());
 
     for (size_t i = 0; i < nodes.size(); i++) {
@@ -373,12 +400,15 @@ TEST_CASE("Call expression parsing", "[parser]") {
   auto input = "add(1, 2 * 3, 4 + 5);";
   auto ast = parse("([parser]: Call expression parsing)", input);
   REQUIRE(ast != nullptr);
-  REQUIRE(ast->tag == "CALL"_);
+  REQUIRE(ast->name == "EXPRESSION_STATEMENT");
 
-  testIdentifier(ast->nodes[0], "add");
+  auto node = ast->nodes[0];
+  REQUIRE(node->name == "CALL");
 
-  REQUIRE(ast->nodes[1]->tag == "ARGUMENTS"_);
-  const auto &nodes = ast->nodes[1]->nodes;
+  testIdentifier(node->nodes[0], "add");
+
+  REQUIRE(node->nodes[1]->name == "ARGUMENTS");
+  auto nodes = node->nodes[1]->nodes;
   testLiteralExpression(nodes[0], int64_t(1));
   testInfixExpression(nodes[1], int64_t(2), "*", int64_t(3));
   testInfixExpression(nodes[2], int64_t(4), "+", int64_t(5));
@@ -400,12 +430,15 @@ TEST_CASE("Call expression parameter parsing", "[parser]") {
   for (const auto &t : tests) {
     auto ast = parse("([parser]: Call expression parameter parsing)", t.input);
     REQUIRE(ast != nullptr);
-    REQUIRE(ast->tag == "CALL"_);
+    REQUIRE(ast->name == "EXPRESSION_STATEMENT");
 
-    testIdentifier(ast->nodes[0], t.expectedIdent);
+    auto node = ast->nodes[0];
+    REQUIRE(node->name == "CALL");
 
-    REQUIRE(ast->nodes[1]->tag == "ARGUMENTS"_);
-    const auto &nodes = ast->nodes[1]->nodes;
+    testIdentifier(node->nodes[0], t.expectedIdent);
+
+    REQUIRE(node->nodes[1]->name == "ARGUMENTS");
+    auto nodes = node->nodes[1]->nodes;
     CHECK(nodes.size() == t.expectedArgs.size());
 
     for (size_t i = 0; i < nodes.size(); i++) {
@@ -418,27 +451,36 @@ TEST_CASE("String literal expression", "[parser]") {
   auto input = R"("hello world";)";
   auto ast = parse("([parser]: String literal expression)", input);
   REQUIRE(ast != nullptr);
-  REQUIRE(ast->tag == "STRING"_);
+  REQUIRE(ast->name == "EXPRESSION_STATEMENT");
 
-  testStringLiteral(ast, "hello world");
+  auto node = ast->nodes[0];
+  REQUIRE(node->name == "STRING");
+
+  testStringLiteral(node, "hello world");
 }
 
 TEST_CASE("Parsing empty array literals", "[parser]") {
   auto input = "[]";
   auto ast = parse("([parser]: Parsing empty array literals)", input);
   REQUIRE(ast != nullptr);
-  REQUIRE(ast->tag == "ARRAY"_);
+  REQUIRE(ast->name == "EXPRESSION_STATEMENT");
 
-  CHECK(ast->nodes.empty());
+  auto node = ast->nodes[0];
+  REQUIRE(node->name == "ARRAY");
+
+  CHECK(node->nodes.empty());
 }
 
 TEST_CASE("Parsing array literals", "[parser]") {
   auto input = "[1, 2 * 2, 3 + 3]";
   auto ast = parse("([parser]: Parsing array literals)", input);
   REQUIRE(ast != nullptr);
-  REQUIRE(ast->tag == "ARRAY"_);
+  REQUIRE(ast->name == "EXPRESSION_STATEMENT");
 
-  const auto &nodes = ast->nodes;
+  auto node = ast->nodes[0];
+  REQUIRE(node->name == "ARRAY");
+
+  auto nodes = node->nodes;
   CHECK(nodes.size() == 3);
 
   testIntegerLiteral(nodes[0], 1);
@@ -450,26 +492,35 @@ TEST_CASE("Parsing index expression", "[parser]") {
   auto input = "myArray[1 + 1]";
   auto ast = parse("([parser]: Parsing index expression)", input);
   REQUIRE(ast != nullptr);
-  REQUIRE(ast->tag == "CALL"_);
+  REQUIRE(ast->name == "EXPRESSION_STATEMENT");
 
-  testIdentifier(ast->nodes[0], "myArray");
+  auto node = ast->nodes[0];
+  REQUIRE(node->name == "CALL");
 
-  REQUIRE(ast->nodes[1]->tag == "INDEX"_);
-  testInfixExpression(ast->nodes[1]->nodes[0], int64_t(1), "+", int64_t(1));
+  testIdentifier(node->nodes[0], "myArray");
+
+  REQUIRE(node->nodes[1]->name == "INDEX");
+  testInfixExpression(node->nodes[1]->nodes[0], int64_t(1), "+", int64_t(1));
 }
 
 TEST_CASE("Parsing empty hash literal", "[parser]") {
   auto input = "{}";
   auto ast = parse("([parser]: Parsing empty hash literal)", input);
   REQUIRE(ast != nullptr);
-  REQUIRE(ast->tag == "HASH"_);
+  REQUIRE(ast->name == "EXPRESSION_STATEMENT");
+
+  auto node = ast->nodes[0];
+  REQUIRE(node->name == "HASH");
 }
 
 TEST_CASE("Parsing hash literals string keys", "[parser]") {
   auto input = R"({"one": 1, "two": 2, "three": 3})";
   auto ast = parse("([parser]: Parsing hash literals string keys)", input);
   REQUIRE(ast != nullptr);
-  REQUIRE(ast->tag == "HASH"_);
+  REQUIRE(ast->name == "EXPRESSION_STATEMENT");
+
+  auto node = ast->nodes[0];
+  REQUIRE(node->name == "HASH");
 
   map<string_view, int64_t> expected = {
       {"one"sv, 1},
@@ -477,10 +528,10 @@ TEST_CASE("Parsing hash literals string keys", "[parser]") {
       {"three"sv, 3},
   };
 
-  for (const auto &node : ast->nodes) {
+  for (auto node : node->nodes) {
     auto key = node->nodes[0];
     auto val = node->nodes[1];
-    REQUIRE(key->tag == "STRING"_);
+    REQUIRE(key->name == "STRING");
 
     auto expectedValue = expected[key->token];
     testIntegerLiteral(val, expectedValue);
@@ -491,17 +542,20 @@ TEST_CASE("Parsing hash literals boolean keys", "[parser]") {
   auto input = "{true: 1, false: 2}";
   auto ast = parse("([parser]: Parsing hash literals boolean keys)", input);
   REQUIRE(ast != nullptr);
-  REQUIRE(ast->tag == "HASH"_);
+  REQUIRE(ast->name == "EXPRESSION_STATEMENT");
+
+  auto node = ast->nodes[0];
+  REQUIRE(node->name == "HASH");
 
   map<string_view, int64_t> expected = {
       {"true"sv, 1},
       {"false"sv, 2},
   };
 
-  for (const auto &node : ast->nodes) {
+  for (auto node : node->nodes) {
     auto key = node->nodes[0];
     auto val = node->nodes[1];
-    REQUIRE(key->tag == "BOOLEAN"_);
+    REQUIRE(key->name == "BOOLEAN");
 
     auto expectedValue = expected[key->token];
     testIntegerLiteral(val, expectedValue);
@@ -511,6 +565,10 @@ TEST_CASE("Parsing hash literals boolean keys", "[parser]") {
 TEST_CASE("Parsing hash literals integer keys", "[parser]") {
   auto input = "{1: 1, 2: 2, 3: 3}";
   auto ast = parse("([parser]: Parsing hash literals integer keys)", input);
+  REQUIRE(ast->name == "EXPRESSION_STATEMENT");
+
+  auto node = ast->nodes[0];
+  REQUIRE(node->name == "HASH");
 
   map<string_view, int64_t> expected = {
       {"1"sv, 1},
@@ -518,10 +576,10 @@ TEST_CASE("Parsing hash literals integer keys", "[parser]") {
       {"3"sv, 3},
   };
 
-  for (const auto &node : ast->nodes) {
+  for (auto node : node->nodes) {
     auto key = node->nodes[0];
     auto val = node->nodes[1];
-    REQUIRE(key->tag == "INTEGER"_);
+    REQUIRE(key->name == "INTEGER");
 
     auto expectedValue = expected[key->token];
     testIntegerLiteral(val, expectedValue);
@@ -532,7 +590,10 @@ TEST_CASE("Parsing hash literals with expression", "[parser]") {
   auto input = R"({"one": 0 + 1, "two": 10 - 8, "three": 15 / 5})";
   auto ast = parse("([parser]: Parsing hash literals with expression)", input);
   REQUIRE(ast != nullptr);
-  REQUIRE(ast->tag == "HASH"_);
+  REQUIRE(ast->name == "EXPRESSION_STATEMENT");
+
+  auto node = ast->nodes[0];
+  REQUIRE(node->name == "HASH");
 
   using TestFunc = function<void(const shared_ptr<Ast> &ast)>;
   map<string_view, TestFunc> tests = {
@@ -556,10 +617,10 @@ TEST_CASE("Parsing hash literals with expression", "[parser]") {
       },
   };
 
-  for (const auto &node : ast->nodes) {
+  for (auto node : node->nodes) {
     auto key = node->nodes[0];
     auto val = node->nodes[1];
-    REQUIRE(key->tag == "STRING"_);
+    REQUIRE(key->name == "STRING");
 
     auto testFunc = tests[key->token];
     testFunc(val);

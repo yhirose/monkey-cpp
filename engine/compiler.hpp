@@ -1,7 +1,7 @@
 #pragma once
 
-#include <object.hpp>
 #include <code.hpp>
+#include <object.hpp>
 
 namespace monkey {
 
@@ -18,27 +18,36 @@ struct Compiler {
     using namespace peg::udl;
 
     switch (ast->tag) {
-      case "INFIX_EXPR"_: {
-        compile(ast->nodes[0]);
-        compile(ast->nodes[2]);
+    case "STATEMENTS"_: {
+      for (auto node: ast->nodes) {
+        compile(node);
+      }
+      break;
+    }
+    case "EXPRESSION_STATEMENT"_: {
+      compile(ast->nodes[0]);
+      emit(OpPop, {});
+      break;
+    }
+    case "INFIX_EXPR"_: {
+      compile(ast->nodes[0]);
+      compile(ast->nodes[2]);
 
-        auto op = ast->nodes[1]->token[0];
-        switch (op) {
-          case '+':
-            emit(OpAdd, {});
-            break;
-          default:
-            throw std::runtime_error(fmt::format("unknown operator {}", op));
-            break;
-        }
-
+      auto op = ast->nodes[1]->token[0];
+      switch (op) {
+      case '+': emit(OpAdd, {}); break;
+      default:
+        throw std::runtime_error(fmt::format("unknown operator {}", op));
         break;
       }
-      case "INTEGER"_: {
-        auto integer = std::make_shared<Integer>(ast->to_integer());
-        emit(OpConstant, {add_constant(integer)});
-        break;
-      }
+
+      break;
+    }
+    case "INTEGER"_: {
+      auto integer = std::make_shared<Integer>(ast->to_integer());
+      emit(OpConstant, {add_constant(integer)});
+      break;
+    }
     }
   }
 
@@ -59,9 +68,7 @@ struct Compiler {
     return pos_new_instruction;
   }
 
-  Bytecode bytecode() {
-    return Bytecode { instructions, constants };
-  }
+  Bytecode bytecode() { return Bytecode{instructions, constants}; }
 };
 
 } // namespace monkey

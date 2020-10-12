@@ -31,8 +31,8 @@ inline int repl(std::shared_ptr<monkey::Environment> env,
             compiler.compile(ast);
             VM vm(compiler.bytecode());
             vm.run();
-            auto stack_top = vm.stack_top();
-            cout << stack_top->inspect() << endl;
+            auto last_poped = vm.last_popped_stack_elem();
+            cout << last_poped->inspect() << endl;
           } else {
             auto val = eval(ast, env);
             if (val->type() != ERROR_OBJ) {
