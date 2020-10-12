@@ -1,3 +1,4 @@
+#include "commandline.hpp"
 #include "repl.hpp"
 #include "run.hpp"
 
@@ -6,10 +7,8 @@ int main(int argc, const char **argv) {
 
   try {
     auto env = monkey::environment();
-
     if (!run(env, options)) { return -1; }
-
-    if (options.shell) { repl(env, options.print_ast); }
+    if (options.shell) { repl(env, options); }
   } catch (std::exception &e) {
     std::cerr << e.what() << std::endl;
     return -1;

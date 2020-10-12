@@ -3,11 +3,14 @@
 #include <evaluator.hpp>
 #include <parser.hpp>
 
+#include <vm.hpp>
+
 #include "linenoise.hpp"
 
 namespace monkey {
 
-inline int repl(std::shared_ptr<monkey::Environment> env, bool print_ast) {
+inline int repl(std::shared_ptr<monkey::Environment> env,
+                const Options &options) {
   using namespace monkey;
   using namespace std;
 
@@ -20,16 +23,25 @@ inline int repl(std::shared_ptr<monkey::Environment> env, bool print_ast) {
       vector<string> msgs;
       auto ast = parse("(repl)", line.data(), line.size(), msgs);
       if (ast) {
-        if (print_ast) { cout << peg::ast_to_s(ast); }
+        if (options.print_ast) { cout << peg::ast_to_s(ast); }
 
         try {
-          auto val = eval(ast, env);
-          if (val->type() != ERROR_OBJ) {
-            cout << val->inspect() << endl;
-            linenoise::AddHistory(line.c_str());
-            continue;
+          if (options.vm) {
+            Compiler compiler;
+            compiler.compile(ast);
+            VM vm(compiler.bytecode());
+            vm.run();
+            auto stack_top = vm.stack_top();
+            cout << stack_top->inspect() << endl;
           } else {
-            msgs.push_back(cast<Error>(val).message);
+            auto val = eval(ast, env);
+            if (val->type() != ERROR_OBJ) {
+              cout << val->inspect() << endl;
+              linenoise::AddHistory(line.c_str());
+              continue;
+            } else {
+              msgs.push_back(cast<Error>(val).message);
+            }
           }
         } catch (const std::exception &e) { msgs.push_back(e.what()); }
       }

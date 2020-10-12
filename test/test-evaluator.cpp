@@ -7,35 +7,35 @@ using namespace std;
 using namespace peg::udl;
 using namespace monkey;
 
-std::shared_ptr<Object> testEval(const string &input) {
+shared_ptr<Object> testEval(const string &input) {
   auto ast = parse("([evaluator])", input);
   // cout << ast_to_s(ast) << endl;
   REQUIRE(ast != nullptr);
   return eval(ast, monkey::environment());
 }
 
-void testIntegerObject(std::shared_ptr<Object> evaluated, int64_t expected) {
+void testIntegerObject(shared_ptr<Object> evaluated, int64_t expected) {
   REQUIRE(evaluated->type() == INTEGER_OBJ);
   CHECK(cast<Integer>(evaluated).value == expected);
 }
 
-void testBooleanObject(std::shared_ptr<Object> evaluated, int64_t expected) {
+void testBooleanObject(shared_ptr<Object> evaluated, int64_t expected) {
   REQUIRE(evaluated->type() == BOOLEAN_OBJ);
   CHECK(cast<Boolean>(evaluated).value == expected);
 }
 
-void testNullObject(std::shared_ptr<Object> evaluated) {
+void testNullObject(shared_ptr<Object> evaluated) {
   REQUIRE(evaluated->type() == NULL_OBJ);
   CHECK(evaluated.get() == CONST_NULL.get());
 }
 
-void testStringObject(std::shared_ptr<Object> evaluated, const char *expected) {
+void testStringObject(shared_ptr<Object> evaluated, const char *expected) {
   CHECK(evaluated->type() == STRING_OBJ);
   CHECK(cast<String>(evaluated).value == expected);
 }
 
-void testObject(std::shared_ptr<Object> evaluated,
-                const std::shared_ptr<Object> expected) {
+void testObject(shared_ptr<Object> evaluated,
+                const shared_ptr<Object> expected) {
   CHECK(evaluated->type() == expected->type());
   if (evaluated->type() == INTEGER_OBJ) {
     CHECK(cast<Integer>(evaluated).value == cast<Integer>(expected).value);
@@ -127,7 +127,7 @@ TEST_CASE("Bang operator", "[evaluator]") {
 TEST_CASE("If else expressions", "[evaluator]") {
   struct Test {
     string input;
-    std::shared_ptr<Object> expected;
+    shared_ptr<Object> expected;
   };
 
   Test tests[] = {
@@ -369,7 +369,7 @@ TEST_CASE("Test string concatenation", "[evaluator]") {
 TEST_CASE("Test builtin functions", "[evaluator]") {
   struct Test {
     string input;
-    std::shared_ptr<Object> expected;
+    shared_ptr<Object> expected;
   };
 
   Test tests[] = {
@@ -418,7 +418,7 @@ TEST_CASE("Test array literals", "[evaluator]") {
 TEST_CASE("Test array index expressions", "[evaluator]") {
   struct Test {
     string input;
-    std::shared_ptr<Object> expected;
+    shared_ptr<Object> expected;
   };
 
   Test tests[] = {
@@ -455,7 +455,7 @@ TEST_CASE("Test hash literals", "[evaluator]") {
   auto evaluated = testEval(input);
   REQUIRE(evaluated->type() == HASH_OBJ);
 
-  std::map<HashKey, int64_t> expected{
+  map<HashKey, int64_t> expected{
       {make_string("one")->hash_key(), int64_t(1)},
       {make_string("two")->hash_key(), int64_t(2)},
       {make_string("three")->hash_key(), int64_t(3)},
@@ -475,7 +475,7 @@ TEST_CASE("Test hash literals", "[evaluator]") {
 TEST_CASE("Test hash index expressions", "[evaluator]") {
   struct Test {
     string input;
-    std::shared_ptr<Object> expected;
+    shared_ptr<Object> expected;
   };
 
   Test tests[] = {
