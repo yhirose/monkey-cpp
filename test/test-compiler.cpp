@@ -25,11 +25,9 @@ void test_constants(vector<shared_ptr<Object>> expected,
 
   size_t i = 0;
   for (const auto &constant : expected) {
-    switch (constant->type()) {
-    case INTEGER_OBJ:
+    if (constant->type() == INTEGER_OBJ) {
       auto val = cast<Integer>(constant).value;
       test_integer_object(val, actual[i]);
-      break;
     }
     i++;
   }
@@ -66,6 +64,36 @@ TEST_CASE("Integer arithmetic", "[compiler]") {
               make(OpConstant, {0}),
               make(OpConstant, {1}),
               make(OpAdd, {}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          "1 - 2",
+          {make_integer(1), make_integer(2)},
+          {
+              make(OpConstant, {0}),
+              make(OpConstant, {1}),
+              make(OpSub, {}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          "1 * 2",
+          {make_integer(1), make_integer(2)},
+          {
+              make(OpConstant, {0}),
+              make(OpConstant, {1}),
+              make(OpMul, {}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          "1 / 2",
+          {make_integer(1), make_integer(2)},
+          {
+              make(OpConstant, {0}),
+              make(OpConstant, {1}),
+              make(OpDiv, {}),
               make(OpPop, {}),
           },
       },

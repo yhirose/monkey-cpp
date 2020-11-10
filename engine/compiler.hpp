@@ -36,6 +36,9 @@ struct Compiler {
       auto op = ast->nodes[1]->token[0];
       switch (op) {
       case '+': emit(OpAdd, {}); break;
+      case '-': emit(OpSub, {}); break;
+      case '*': emit(OpMul, {}); break;
+      case '/': emit(OpDiv, {}); break;
       default:
         throw std::runtime_error(fmt::format("unknown operator {}", op));
         break;

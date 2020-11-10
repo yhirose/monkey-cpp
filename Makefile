@@ -12,7 +12,7 @@ TEST_SOURCE = test/test-main.cpp test/test-parser.cpp test/test-evaluator.cpp te
 
 all: build/monkey build/test
 
-test:
+test: build/test
 	./build/test
 
 build/monkey: $(MONKEY_SOURCE) $(CLI_HEADER) $(CLI_SOURCE)
