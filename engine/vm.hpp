@@ -38,6 +38,8 @@ struct VM {
       case OpSub:
       case OpMul:
       case OpDiv: execute_binary_operation(op); break;
+      case OpTrue: push(CONST_TRUE); break;
+      case OpFalse: push(CONST_FALSE); break;
       case OpPop: pop(); break;
       }
     }

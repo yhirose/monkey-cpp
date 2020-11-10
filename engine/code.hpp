@@ -18,6 +18,8 @@ enum OpecodeType {
   OpSub,
   OpMul,
   OpDiv,
+  OpTrue,
+  OpFalse,
   OpPop,
 };
 
@@ -33,6 +35,8 @@ inline std::map<Opecode, Definition> &definitions() {
       {OpSub, {"OpSub", {}}},
       {OpMul, {"OpMul", {}}},
       {OpDiv, {"OpDiv", {}}},
+      {OpTrue, {"OpTrue", {}}},
+      {OpFalse, {"OpFalse", {}}},
       {OpPop, {"OpPop", {}}},
   };
   return definitions_;

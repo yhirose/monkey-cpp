@@ -112,6 +112,29 @@ TEST_CASE("Integer arithmetic", "[compiler]") {
   run_compiler_test("([compiler]: Integer arithmetic)", tests);
 }
 
+TEST_CASE("Boolean expressions", "[compiler]") {
+  vector<CompilerTestCase> tests{
+      {
+          "true",
+          {},
+          {
+              make(OpTrue, {}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          "false",
+          {},
+          {
+              make(OpFalse, {}),
+              make(OpPop, {}),
+          },
+      },
+  };
+
+  run_compiler_test("([compiler]: Boolean expressions)", tests);
+}
+
 TEST_CASE("Read operands", "[compiler]") {
   struct Test {
     OpecodeType op;

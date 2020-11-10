@@ -19,7 +19,7 @@ struct Compiler {
 
     switch (ast->tag) {
     case "STATEMENTS"_: {
-      for (auto node: ast->nodes) {
+      for (auto node : ast->nodes) {
         compile(node);
       }
       break;
@@ -49,6 +49,14 @@ struct Compiler {
     case "INTEGER"_: {
       auto integer = std::make_shared<Integer>(ast->to_integer());
       emit(OpConstant, {add_constant(integer)});
+      break;
+    }
+    case "BOOLEAN"_: {
+      if (ast->to_bool()) {
+        emit(OpTrue, {});
+      } else {
+        emit(OpFalse, {});
+      }
       break;
     }
     }

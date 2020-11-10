@@ -12,6 +12,9 @@ void test_expected_object(shared_ptr<Object> expected,
   if (expected->type() == INTEGER_OBJ) {
     auto val = cast<Integer>(expected).value;
     test_integer_object(val, actual);
+  } else if (expected->type() == BOOLEAN_OBJ) {
+    auto val = cast<Boolean>(expected).value;
+    test_boolean_object(val, actual);
   }
 }
 
@@ -57,5 +60,16 @@ TEST_CASE("Integer arithmetic - vm", "[vm]") {
   };
 
   run_vm_test("([vm]: Integer arithmetic)", tests);
+}
+
+TEST_CASE("Boolean expressions - vm", "[vm]") {
+  vector<VmTestCase> tests{
+      {
+          {"true", make_bool(true)},
+          {"false", make_bool(false)},
+      },
+  };
+
+  run_vm_test("([vm]: Boolean expressions)", tests);
 }
 
