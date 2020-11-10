@@ -22,9 +22,7 @@ struct VM {
     return stack[sp - 1];
   }
 
-  std::shared_ptr<Object> last_popped_stack_elem() const {
-    return stack[sp];
-  }
+  std::shared_ptr<Object> last_popped_stack_elem() const { return stack[sp]; }
 
   void run() {
     for (size_t ip = 0; ip < instructions.size(); ip++) {
@@ -36,19 +34,11 @@ struct VM {
         push(constants[constIndex]);
         break;
       }
-      case OpAdd: {
-        auto right = pop();
-        auto left = pop();
-        auto left_value = cast<Integer>(left).value;
-        auto right_value = cast<Integer>(right).value;
-        auto result = left_value + right_value;
-        push(make_integer(result));
-        break;
-      }
-      case OpPop: {
-        pop();
-        break;
-      }
+      case OpAdd:
+      case OpSub:
+      case OpMul:
+      case OpDiv: execute_binary_operation(op); break;
+      case OpPop: pop(); break;
       }
     }
   }
@@ -64,6 +54,44 @@ struct VM {
     stack.pop_back();
     sp--;
     return o;
+  }
+
+  void execute_binary_operation(Opecode op) {
+    auto right = pop();
+    auto left = pop();
+
+    auto left_type = left->type();
+    auto right_type = right->type();
+
+    if (left_type == ObjectType::INTEGER_OBJ &&
+        right_type == ObjectType::INTEGER_OBJ) {
+      execute_binary_integer_operation(op, left, right);
+      return;
+    }
+
+    throw std::runtime_error(
+        fmt::format("unsupported types for binary operation: {} {}", left_type,
+                    right_type));
+  }
+
+  void execute_binary_integer_operation(Opecode op,
+                                        std::shared_ptr<Object> left,
+                                        std::shared_ptr<Object> right) {
+    auto left_value = cast<Integer>(left).value;
+    auto right_value = cast<Integer>(right).value;
+
+    int64_t result;
+
+    switch (op) {
+    case OpAdd: result = left_value + right_value; break;
+    case OpSub: result = left_value - right_value; break;
+    case OpMul: result = left_value * right_value; break;
+    case OpDiv: result = left_value / right_value; break;
+    default:
+      throw std::runtime_error(fmt::format("unknown integer operator: {}", op));
+    }
+
+    push(make_integer(result));
   }
 };
 

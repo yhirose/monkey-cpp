@@ -9,11 +9,9 @@ using namespace monkey;
 
 void test_expected_object(shared_ptr<Object> expected,
                           shared_ptr<Object> actual) {
-  switch (expected->type()) {
-  case INTEGER_OBJ:
+  if (expected->type() == INTEGER_OBJ) {
     auto val = cast<Integer>(expected).value;
     test_integer_object(val, actual);
-    break;
   }
 }
 
@@ -46,6 +44,15 @@ TEST_CASE("Integer arithmetic - vm", "[vm]") {
           {"1", make_integer(1)},
           {"2", make_integer(2)},
           {"1 + 2", make_integer(3)},
+          {"1 - 2", make_integer(-1)},
+          {"1 * 2", make_integer(2)},
+          {"4 / 2", make_integer(2)},
+          {"50 / 2 * 2 + 10 - 5", make_integer(55)},
+          {"5 + 5 + 5 + 5 - 10", make_integer(10)},
+          {"2 * 2 * 2 * 2 * 2", make_integer(32)},
+          {"5 * 2 + 10", make_integer(20)},
+          {"5 + 2 * 10", make_integer(25)},
+          {"5 * (2 + 10)", make_integer(60)},
       },
   };
 
