@@ -28,6 +28,17 @@ inline void test_integer_object(int64_t expected,
   CHECK(val == expected);
 }
 
+inline void test_boolean_object(bool expected,
+                                std::shared_ptr<monkey::Object> actual) {
+  using namespace monkey;
+
+  REQUIRE(actual);
+  CHECK(actual->type() == BOOLEAN_OBJ);
+
+  auto val = cast<Boolean>(actual).value;
+  CHECK(val == expected);
+}
+
 inline monkey::Instructions
 concat_instructions(const std::vector<monkey::Instructions> &s) {
   monkey::Instructions out;
