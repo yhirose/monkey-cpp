@@ -107,6 +107,15 @@ TEST_CASE("Integer arithmetic", "[compiler]") {
               make(OpPop, {}),
           },
       },
+      {
+          "-1",
+          {make_integer(1)},
+          {
+              make(OpConstant, {0}),
+              make(OpMinus, {}),
+              make(OpPop, {}),
+          },
+      },
   };
 
   run_compiler_test("([compiler]: Integer arithmetic)", tests);
@@ -187,6 +196,15 @@ TEST_CASE("Boolean expressions", "[compiler]") {
               make(OpTrue, {}),
               make(OpFalse, {}),
               make(OpNotEqual, {}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          "!true",
+          {},
+          {
+              make(OpTrue, {}),
+              make(OpBang, {}),
               make(OpPop, {}),
           },
       },

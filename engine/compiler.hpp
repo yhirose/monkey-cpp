@@ -54,7 +54,23 @@ struct Compiler {
         throw std::runtime_error(fmt::format("unknown operator {}", op));
         break;
       }
+      break;
+    }
+    case "PREFIX_EXPR"_: {
+      int i = ast->nodes.size() - 1;
+      compile(ast->nodes[i--]);
 
+      while (i >= 0) {
+        auto op = ast->nodes[i]->token;
+        switch (peg::str2tag(op)) {
+        case "!"_: emit(OpBang, {}); break;
+        case "-"_: emit(OpMinus, {}); break;
+        default:
+          throw std::runtime_error(fmt::format("unknown operator {}", op));
+          break;
+        }
+        i--;
+      }
       break;
     }
     case "INTEGER"_: {
