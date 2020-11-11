@@ -130,6 +130,66 @@ TEST_CASE("Boolean expressions", "[compiler]") {
               make(OpPop, {}),
           },
       },
+      {
+          "1 > 2",
+          {make_integer(1), make_integer(2)},
+          {
+              make(OpConstant, {0}),
+              make(OpConstant, {1}),
+              make(OpGreaterThan, {}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          "1 < 2",
+          {make_integer(2), make_integer(1)},
+          {
+              make(OpConstant, {0}),
+              make(OpConstant, {1}),
+              make(OpGreaterThan, {}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          "1 == 2",
+          {make_integer(1), make_integer(2)},
+          {
+              make(OpConstant, {0}),
+              make(OpConstant, {1}),
+              make(OpEqual, {}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          "1 != 2",
+          {make_integer(1), make_integer(2)},
+          {
+              make(OpConstant, {0}),
+              make(OpConstant, {1}),
+              make(OpNotEqual, {}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          "true == false",
+          {},
+          {
+              make(OpTrue, {}),
+              make(OpFalse, {}),
+              make(OpEqual, {}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          "true != false",
+          {},
+          {
+              make(OpTrue, {}),
+              make(OpFalse, {}),
+              make(OpNotEqual, {}),
+              make(OpPop, {}),
+          },
+      },
   };
 
   run_compiler_test("([compiler]: Boolean expressions)", tests);

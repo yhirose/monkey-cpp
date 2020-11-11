@@ -67,6 +67,23 @@ TEST_CASE("Boolean expressions - vm", "[vm]") {
       {
           {"true", make_bool(true)},
           {"false", make_bool(false)},
+          {"1 < 2", make_bool(true)},
+          {"1 > 2", make_bool(false)},
+          {"1 < 1", make_bool(false)},
+          {"1 > 1", make_bool(false)},
+          {"1 == 1", make_bool(true)},
+          {"1 != 1", make_bool(false)},
+          {"1 == 2", make_bool(false)},
+          {"1 != 2", make_bool(true)},
+          {"true == true", make_bool(true)},
+          {"false == false", make_bool(true)},
+          {"true == false", make_bool(false)},
+          {"true != false", make_bool(true)},
+          {"false != true", make_bool(true)},
+          {"(1 < 2) == true", make_bool(true)},
+          {"(1 < 2) == false", make_bool(false)},
+          {"(1 > 2) == true", make_bool(false)},
+          {"(1 > 2) == false", make_bool(true)},
       },
   };
 

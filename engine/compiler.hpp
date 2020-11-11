@@ -30,15 +30,26 @@ struct Compiler {
       break;
     }
     case "INFIX_EXPR"_: {
+      auto op = ast->nodes[1]->token;
+
+      if (op == "<") {
+        compile(ast->nodes[2]);
+        compile(ast->nodes[0]);
+        emit(OpGreaterThan, {});
+        return;
+      }
+
       compile(ast->nodes[0]);
       compile(ast->nodes[2]);
 
-      auto op = ast->nodes[1]->token[0];
-      switch (op) {
-      case '+': emit(OpAdd, {}); break;
-      case '-': emit(OpSub, {}); break;
-      case '*': emit(OpMul, {}); break;
-      case '/': emit(OpDiv, {}); break;
+      switch (peg::str2tag(op)) {
+      case "+"_: emit(OpAdd, {}); break;
+      case "-"_: emit(OpSub, {}); break;
+      case "*"_: emit(OpMul, {}); break;
+      case "/"_: emit(OpDiv, {}); break;
+      case ">"_: emit(OpGreaterThan, {}); break;
+      case "=="_: emit(OpEqual, {}); break;
+      case "!="_: emit(OpNotEqual, {}); break;
       default:
         throw std::runtime_error(fmt::format("unknown operator {}", op));
         break;
