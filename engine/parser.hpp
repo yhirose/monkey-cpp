@@ -47,7 +47,7 @@ HASH_PAIR              <-  EXPRESSION ':' EXPRESSION
 IDENTIFIER             <-  !KEYWORD < [a-zA-Z]+ >
 INTEGER                <-  < [0-9]+ >
 STRING                 <-  < ["] < (!["] .)* > ["] >
-BOOLEAN                <-  < 'true' / 'false' >
+BOOLEAN                <-  'true' / 'false'
 NULL                   <-  'null'
 PREFIX_OPE             <-  < [-!] >
 INFIX_OPE              <-  < [-+/*<>] / '==' / '!=' >

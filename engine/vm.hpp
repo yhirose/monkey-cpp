@@ -43,6 +43,8 @@ struct VM {
       case OpEqual:
       case OpNotEqual:
       case OpGreaterThan: execute_comparison(op); break;
+      case OpBang: execute_bang_operator(); break;
+      case OpMinus: execute_minus_operator(); break;
       case OpPop: pop(); break;
       }
     }
@@ -68,8 +70,8 @@ struct VM {
     auto left_type = left->type();
     auto right_type = right->type();
 
-    if (left_type == ObjectType::INTEGER_OBJ &&
-        right_type == ObjectType::INTEGER_OBJ) {
+    if (left_type == INTEGER_OBJ &&
+        right_type == INTEGER_OBJ) {
       execute_binary_integer_operation(op, left, right);
       return;
     }
@@ -106,8 +108,8 @@ struct VM {
     auto left_type = left->type();
     auto right_type = right->type();
 
-    if (left_type == ObjectType::INTEGER_OBJ ||
-        right_type == ObjectType::INTEGER_OBJ) {
+    if (left_type == INTEGER_OBJ ||
+        right_type == INTEGER_OBJ) {
       execute_integer_comparison(op, left, right);
       return;
     }
@@ -135,6 +137,27 @@ struct VM {
     case OpGreaterThan: push(make_bool(left_value > right_value)); break;
     default: throw std::runtime_error(fmt::format("unknown operator: {}", op));
     }
+  }
+
+  void execute_bang_operator() {
+    auto operand = pop();
+    if (operand->type() == BOOLEAN_OBJ) {
+      auto value = cast<Boolean>(operand).value;
+      push(make_bool(!value));
+    } else {
+      push(make_bool(false));
+    }
+  }
+
+  void execute_minus_operator() {
+    auto operand = pop();
+    if (operand->type() != INTEGER_OBJ) {
+      throw std::runtime_error(
+          fmt::format("unsupported types for negation: {}", operand->type()));
+    }
+
+    auto value = cast<Integer>(operand).value;
+    push(make_integer(value * -1));
   }
 };
 

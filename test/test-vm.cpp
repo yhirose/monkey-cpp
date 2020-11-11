@@ -56,6 +56,10 @@ TEST_CASE("Integer arithmetic - vm", "[vm]") {
           {"5 * 2 + 10", make_integer(20)},
           {"5 + 2 * 10", make_integer(25)},
           {"5 * (2 + 10)", make_integer(60)},
+          {"-5", make_integer(-5)},
+          {"-10", make_integer(-10)},
+          {"-50 + 100 + -50", make_integer(0)},
+          {"(5 + 10 * 2 + 15 / 3) * 2 + -10", make_integer(50)},
       },
   };
 
@@ -84,6 +88,12 @@ TEST_CASE("Boolean expressions - vm", "[vm]") {
           {"(1 < 2) == false", make_bool(false)},
           {"(1 > 2) == true", make_bool(false)},
           {"(1 > 2) == false", make_bool(true)},
+          {"!true", make_bool(false)},
+          {"!false", make_bool(true)},
+          {"!5", make_bool(false)},
+          {"!!true", make_bool(true)},
+          {"!!false", make_bool(false)},
+          {"!!5", make_bool(true)},
       },
   };
 
