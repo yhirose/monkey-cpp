@@ -20,6 +20,9 @@ enum OpecodeType {
   OpDiv,
   OpTrue,
   OpFalse,
+  OpEqual,
+  OpNotEqual,
+  OpGreaterThan,
   OpPop,
 };
 
@@ -37,6 +40,9 @@ inline std::map<Opecode, Definition> &definitions() {
       {OpDiv, {"OpDiv", {}}},
       {OpTrue, {"OpTrue", {}}},
       {OpFalse, {"OpFalse", {}}},
+      {OpEqual, {"OpEqual", {}}},
+      {OpNotEqual, {"OpNotEqual", {}}},
+      {OpGreaterThan, {"OpGreaterThan", {}}},
       {OpPop, {"OpPop", {}}},
   };
   return definitions_;
