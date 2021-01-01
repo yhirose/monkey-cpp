@@ -26,6 +26,8 @@ enum OpecodeType {
   OpMinus,
   OpBang,
   OpPop,
+  OpJumpNotTruthy,
+  OpJump,
 };
 
 struct Definition {
@@ -48,6 +50,8 @@ inline std::map<Opecode, Definition> &definitions() {
       {OpMinus, {"OpMinus", {}}},
       {OpBang, {"OpBang", {}}},
       {OpPop, {"OpPop", {}}},
+      {OpJumpNotTruthy, {"OpJumpNotTruthy", {2}}},
+      {OpJump, {"OpJump", {2}}},
   };
   return definitions_;
 }

@@ -239,3 +239,36 @@ TEST_CASE("Read operands", "[compiler]") {
   }
 }
 
+TEST_CASE("Conditionals", "[compiler]") {
+  vector<CompilerTestCase> tests{
+      {
+          "if (true) { 10 }; 3333;",
+          {make_integer(10), make_integer(3333)},
+          {
+              /* 0000 */ make(OpTrue, {}),
+              /* 0001 */ make(OpJumpNotTruthy, {7}),
+              /* 0004 */ make(OpConstant, {0}),
+              /* 0007 */ make(OpPop, {}),
+              /* 0008 */ make(OpConstant, {1}),
+              /* 0011 */ make(OpPop, {}),
+          },
+      },
+      {
+          "if (true) { 10 } else { 20 } 3333;",
+          {make_integer(10), make_integer(20), make_integer(3333)},
+          {
+              /* 0000 */ make(OpTrue, {}),
+              /* 0001 */ make(OpJumpNotTruthy, {10}),
+              /* 0004 */ make(OpConstant, {0}),
+              /* 0007 */ make(OpJump, {13}),
+              /* 0010 */ make(OpConstant, {1}),
+              /* 0013 */ make(OpPop, {}),
+              /* 0014 */ make(OpConstant, {2}),
+              /* 0017 */ make(OpPop, {}),
+          },
+      },
+  };
+
+  run_compiler_test("([compiler]: Conditionals)", tests);
+}
+

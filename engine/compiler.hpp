@@ -5,6 +5,11 @@
 
 namespace monkey {
 
+struct EmittedInstruction {
+  Opecode opecode;
+  int position;
+};
+
 struct Bytecode {
   Instructions instructions;
   std::vector<std::shared_ptr<Object>> constants;
@@ -13,6 +18,9 @@ struct Bytecode {
 struct Compiler {
   Instructions instructions;
   std::vector<std::shared_ptr<Object>> constants;
+
+  EmittedInstruction lastInstruction;
+  EmittedInstruction previousInstruction;
 
   void compile(const std::shared_ptr<Ast> &ast) {
     using namespace peg::udl;
@@ -73,6 +81,43 @@ struct Compiler {
       }
       break;
     }
+    case "IF"_: {
+      compile(ast->nodes[0]);
+
+      // Emit an `OpJumpNotTruthy` with a bogus value
+      auto jump_not_truthy_pos = emit(OpJumpNotTruthy, {9999});
+
+      // Consequence
+      compile(ast->nodes[1]);
+      if (last_instruction_is_pop()) {
+        remove_last_pop();
+      }
+
+      int after_consequence_pos;
+      if (ast->nodes.size() < 3) { // Has no alternative
+        after_consequence_pos = instructions.size();
+        change_operand(jump_not_truthy_pos, after_consequence_pos);
+      } else {
+        // Emit an `OpJump` with a bogus value
+        auto jump_pos = emit(OpJump, {9999});
+        after_consequence_pos = instructions.size();
+        change_operand(jump_not_truthy_pos, after_consequence_pos);
+
+        // Alternative
+        compile(ast->nodes[2]);
+        if (last_instruction_is_pop()) {
+          remove_last_pop();
+        }
+
+        auto after_alternative_pos = instructions.size();
+        change_operand(jump_pos, after_alternative_pos);
+      }
+      break;
+    }
+    case "BLOCK"_: {
+      compile(ast->nodes[0]);
+      break;
+    }
     case "INTEGER"_: {
       auto integer = std::make_shared<Integer>(ast->to_integer());
       emit(OpConstant, {add_constant(integer)});
@@ -97,6 +142,7 @@ struct Compiler {
   size_t emit(Opecode op, const std::vector<int> &operands) {
     auto ins = make(op, operands);
     auto pos = add_instruction(ins);
+    set_last_instruction(op, pos);
     return pos;
   }
 
@@ -104,6 +150,34 @@ struct Compiler {
     auto pos_new_instruction = instructions.size();
     instructions.insert(instructions.end(), ins.begin(), ins.end());
     return pos_new_instruction;
+  }
+
+  void set_last_instruction(Opecode op, int pos) {
+    auto previous = lastInstruction;
+    auto last = EmittedInstruction{op, pos};
+    previousInstruction = previous;
+    lastInstruction = last;
+  }
+
+  bool last_instruction_is_pop() const {
+    return lastInstruction.opecode == OpPop;
+  }
+
+  void remove_last_pop() {
+    instructions.pop_back();
+    lastInstruction = previousInstruction;
+  }
+
+  void replace_instruction(int pos, const std::vector<uint8_t> &new_instructions) {
+    for (size_t i = 0; i < new_instructions.size(); i++) {
+      instructions[pos + i] = new_instructions[i];
+    }
+  }
+
+  void change_operand(int op_pos, int operand) {
+    auto op = instructions[op_pos];
+    auto new_instruction = make(op, {operand});
+    replace_instruction(op_pos, new_instruction);
   }
 
   Bytecode bytecode() { return Bytecode{instructions, constants}; }
