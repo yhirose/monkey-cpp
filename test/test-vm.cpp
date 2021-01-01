@@ -100,3 +100,19 @@ TEST_CASE("Boolean expressions - vm", "[vm]") {
   run_vm_test("([vm]: Boolean expressions)", tests);
 }
 
+TEST_CASE("Conditionals - vm", "[vm]") {
+  vector<VmTestCase> tests{
+      {
+          {"if (true) { 10 }", make_integer(10)},
+          {"if (true) { 10 } else { 20 }", make_integer(10)},
+          {"if (false) { 10 } else { 20 }", make_integer(20)},
+          {"if (1) { 10 }", make_integer(10)},
+          {"if (1 < 2) { 10 }", make_integer(10)},
+          {"if (1 < 2) { 10 } else { 20 }", make_integer(10)},
+          {"if (1 > 2) { 10 } else { 20 }", make_integer(20)},
+      },
+  };
+
+  run_vm_test("([vm]: Conditionals)", tests);
+}
+

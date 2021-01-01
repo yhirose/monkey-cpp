@@ -46,6 +46,20 @@ struct VM {
       case OpBang: execute_bang_operator(); break;
       case OpMinus: execute_minus_operator(); break;
       case OpPop: pop(); break;
+      case OpJump: {
+        auto pos = read_uint16(&instructions[ip + 1]);
+        ip = pos - 1;
+        break;
+      }
+      case OpJumpNotTruthy: {
+        auto pos = read_uint16(&instructions[ip + 1]);
+        ip += 2;
+        auto condition = pop();
+        if (!is_truthy(condition)) {
+          ip = pos - 1;
+        }
+        break;
+      }
       }
     }
   }
@@ -158,6 +172,14 @@ struct VM {
 
     auto value = cast<Integer>(operand).value;
     push(make_integer(value * -1));
+  }
+
+  bool is_truthy(std::shared_ptr<Object> obj) const {
+    if (obj->type() != INTEGER_OBJ) {
+      return cast<Boolean>(obj).value;
+    } else {
+      return true;
+    }
   }
 };
 
