@@ -89,29 +89,31 @@ struct Compiler {
 
       // Consequence
       compile(ast->nodes[1]);
+
       if (last_instruction_is_pop()) {
         remove_last_pop();
       }
 
-      int after_consequence_pos;
-      if (ast->nodes.size() < 3) { // Has no alternative
-        after_consequence_pos = instructions.size();
-        change_operand(jump_not_truthy_pos, after_consequence_pos);
-      } else {
-        // Emit an `OpJump` with a bogus value
-        auto jump_pos = emit(OpJump, {9999});
-        after_consequence_pos = instructions.size();
-        change_operand(jump_not_truthy_pos, after_consequence_pos);
+      // Emit an `OpJump` with a bogus value
+      auto jump_pos = emit(OpJump, {9999});
 
+      auto after_consequence_pos = instructions.size();
+      change_operand(jump_not_truthy_pos, after_consequence_pos);
+
+      if (ast->nodes.size() < 3) {
+        // Has no alternative
+        emit(OpNull, {});
+      } else {
         // Alternative
         compile(ast->nodes[2]);
+
         if (last_instruction_is_pop()) {
           remove_last_pop();
         }
-
-        auto after_alternative_pos = instructions.size();
-        change_operand(jump_pos, after_alternative_pos);
       }
+
+      auto after_alternative_pos = instructions.size();
+      change_operand(jump_pos, after_alternative_pos);
       break;
     }
     case "BLOCK"_: {

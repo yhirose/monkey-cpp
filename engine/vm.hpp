@@ -40,6 +40,7 @@ struct VM {
       case OpDiv: execute_binary_operation(op); break;
       case OpTrue: push(CONST_TRUE); break;
       case OpFalse: push(CONST_FALSE); break;
+      case OpNull: push(CONST_NULL); break;
       case OpEqual:
       case OpNotEqual:
       case OpGreaterThan: execute_comparison(op); break;
@@ -158,6 +159,8 @@ struct VM {
     if (operand->type() == BOOLEAN_OBJ) {
       auto value = cast<Boolean>(operand).value;
       push(make_bool(!value));
+    } else if (operand->type() == NULL_OBJ) {
+      push(make_bool(true));
     } else {
       push(make_bool(false));
     }
@@ -175,8 +178,10 @@ struct VM {
   }
 
   bool is_truthy(std::shared_ptr<Object> obj) const {
-    if (obj->type() != INTEGER_OBJ) {
+    if (obj->type() == BOOLEAN_OBJ) {
       return cast<Boolean>(obj).value;
+    } else if (obj->type() == NULL_OBJ) {
+      return false;
     } else {
       return true;
     }

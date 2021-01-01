@@ -39,6 +39,15 @@ inline void test_boolean_object(bool expected,
   CHECK(val == expected);
 }
 
+inline void test_null_object(std::shared_ptr<monkey::Object> actual) {
+  using namespace monkey;
+
+  REQUIRE(actual);
+  CHECK(actual->type() == NULL_OBJ);
+
+  CHECK(actual.get() == CONST_NULL.get());
+}
+
 inline monkey::Instructions
 concat_instructions(const std::vector<monkey::Instructions> &s) {
   monkey::Instructions out;

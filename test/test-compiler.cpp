@@ -246,11 +246,13 @@ TEST_CASE("Conditionals", "[compiler]") {
           {make_integer(10), make_integer(3333)},
           {
               /* 0000 */ make(OpTrue, {}),
-              /* 0001 */ make(OpJumpNotTruthy, {7}),
+              /* 0001 */ make(OpJumpNotTruthy, {10}),
               /* 0004 */ make(OpConstant, {0}),
-              /* 0007 */ make(OpPop, {}),
-              /* 0008 */ make(OpConstant, {1}),
+              /* 0007 */ make(OpJump, {11}),
+              /* 0010 */ make(OpNull, {}),
               /* 0011 */ make(OpPop, {}),
+              /* 0012 */ make(OpConstant, {1}),
+              /* 0015 */ make(OpPop, {}),
           },
       },
       {

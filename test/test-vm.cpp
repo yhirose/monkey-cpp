@@ -15,6 +15,8 @@ void test_expected_object(shared_ptr<Object> expected,
   } else if (expected->type() == BOOLEAN_OBJ) {
     auto val = cast<Boolean>(expected).value;
     test_boolean_object(val, actual);
+  } else if (expected->type() == NULL_OBJ) {
+    test_null_object(actual);
   }
 }
 
@@ -94,6 +96,7 @@ TEST_CASE("Boolean expressions - vm", "[vm]") {
           {"!!true", make_bool(true)},
           {"!!false", make_bool(false)},
           {"!!5", make_bool(true)},
+          {"!(if (false) { 5; })", make_bool(true)},
       },
   };
 
@@ -110,6 +113,9 @@ TEST_CASE("Conditionals - vm", "[vm]") {
           {"if (1 < 2) { 10 }", make_integer(10)},
           {"if (1 < 2) { 10 } else { 20 }", make_integer(10)},
           {"if (1 > 2) { 10 } else { 20 }", make_integer(20)},
+          {"if (1 > 2) { 10 }", CONST_NULL},
+          {"if (false) { 10 }", CONST_NULL},
+          {"if ((if (false) { 10 })) { 10 } else { 20 }", make_integer(20)},
       },
   };
 
