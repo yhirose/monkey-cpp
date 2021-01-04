@@ -1,12 +1,12 @@
 CXXFLAGS = -std=c++17 -Wall -Wextra -Iengine -lfmt
 
-MONKEY_SOURCE = engine/object.hpp engine/ast.hpp engine/parser.hpp engine/environment.hpp engine/evaluator.hpp engine/code.hpp engine/compiler.hpp engine/vm.hpp engine/peglib.h
+MONKEY_SOURCE = engine/object.hpp engine/ast.hpp engine/parser.hpp engine/environment.hpp engine/evaluator.hpp engine/code.hpp engine/compiler.hpp engine/vm.hpp engine/symbol_table.hpp engine/peglib.h
 
 CLI_HEADER = cli/repl.hpp cli/repl.hpp
 CLI_SOURCE = cli/main.cpp
 
 TEST_HEADER = test/test-util.hpp
-TEST_SOURCE = test/test-main.cpp test/test-parser.cpp test/test-evaluator.cpp test/test-object.cpp test/test-code.cpp test/test-compiler.cpp test/test-vm.cpp
+TEST_SOURCE = test/test-main.cpp test/test-parser.cpp test/test-evaluator.cpp test/test-object.cpp test/test-code.cpp test/test-compiler.cpp test/test-vm.cpp test/test-symbol_table.cpp
 
 .PHONY: test clean
 

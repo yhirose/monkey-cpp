@@ -2,6 +2,7 @@
 
 #include <code.hpp>
 #include <object.hpp>
+#include <symbol_table.hpp>
 
 namespace monkey {
 
@@ -22,6 +23,8 @@ struct Compiler {
   EmittedInstruction lastInstruction;
   EmittedInstruction previousInstruction;
 
+  SymbolTable symbolTable;
+
   void compile(const std::shared_ptr<Ast> &ast) {
     using namespace peg::udl;
 
@@ -30,6 +33,22 @@ struct Compiler {
       for (auto node : ast->nodes) {
         compile(node);
       }
+      break;
+    }
+    case "ASSIGNMENT"_: {
+      compile(ast->nodes[1]);
+      auto name = std::string(ast->nodes[0]->token);
+      auto symbol = symbolTable.define(name);
+      emit(OpSetGlobal, {symbol.index});
+      break;
+    }
+    case "IDENTIFIER"_: {
+      auto name = std::string(ast->token);
+      const auto &symbol = symbolTable.resolve(name);
+      if (!symbol) {
+        throw std::runtime_error(fmt::format("undefined variable {}", name));
+      }
+      emit(OpGetGlobal, {symbol.value().index});
       break;
     }
     case "EXPRESSION_STATEMENT"_: {
@@ -90,9 +109,7 @@ struct Compiler {
       // Consequence
       compile(ast->nodes[1]);
 
-      if (last_instruction_is_pop()) {
-        remove_last_pop();
-      }
+      if (last_instruction_is_pop()) { remove_last_pop(); }
 
       // Emit an `OpJump` with a bogus value
       auto jump_pos = emit(OpJump, {9999});
@@ -107,9 +124,7 @@ struct Compiler {
         // Alternative
         compile(ast->nodes[2]);
 
-        if (last_instruction_is_pop()) {
-          remove_last_pop();
-        }
+        if (last_instruction_is_pop()) { remove_last_pop(); }
       }
 
       auto after_alternative_pos = instructions.size();
@@ -170,7 +185,8 @@ struct Compiler {
     lastInstruction = previousInstruction;
   }
 
-  void replace_instruction(int pos, const std::vector<uint8_t> &new_instructions) {
+  void replace_instruction(int pos,
+                           const std::vector<uint8_t> &new_instructions) {
     for (size_t i = 0; i < new_instructions.size(); i++) {
       instructions[pos + i] = new_instructions[i];
     }

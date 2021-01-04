@@ -29,6 +29,8 @@ enum OpecodeType {
   OpPop,
   OpJumpNotTruthy,
   OpJump,
+  OpGetGlobal,
+  OpSetGlobal,
 };
 
 struct Definition {
@@ -54,6 +56,8 @@ inline std::map<Opecode, Definition> &definitions() {
       {OpPop, {"OpPop", {}}},
       {OpJumpNotTruthy, {"OpJumpNotTruthy", {2}}},
       {OpJump, {"OpJump", {2}}},
+      {OpGetGlobal, {"GetGlobal", {2}}},
+      {OpSetGlobal, {"SetGlobal", {2}}},
   };
   return definitions_;
 }

@@ -274,3 +274,51 @@ TEST_CASE("Conditionals", "[compiler]") {
   run_compiler_test("([compiler]: Conditionals)", tests);
 }
 
+TEST_CASE("Global Let Statements", "[compiler]") {
+  vector<CompilerTestCase> tests{
+      {
+          R"(
+            let one = 1;
+            let two = 2;
+          )",
+          {make_integer(1), make_integer(2)},
+          {
+              make(OpConstant, {0}),
+              make(OpSetGlobal, {0}),
+              make(OpConstant, {1}),
+              make(OpSetGlobal, {1}),
+          },
+      },
+      {
+          R"(
+            let one = 1;
+            one;
+          )",
+          {make_integer(1)},
+          {
+              make(OpConstant, {0}),
+              make(OpSetGlobal, {0}),
+              make(OpGetGlobal, {0}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          R"(
+            let one = 1;
+            let two = one;
+            two;
+          )",
+          {make_integer(1)},
+          {
+              make(OpConstant, {0}),
+              make(OpSetGlobal, {0}),
+              make(OpGetGlobal, {0}),
+              make(OpSetGlobal, {1}),
+              make(OpGetGlobal, {1}),
+              make(OpPop, {}),
+          },
+      },
+  };
+
+  run_compiler_test("([compiler]: Conditionals)", tests);
+}
