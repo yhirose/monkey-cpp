@@ -14,6 +14,10 @@ inline int repl(std::shared_ptr<monkey::Environment> env,
   using namespace monkey;
   using namespace std;
 
+  std::vector<std::shared_ptr<Object>> constants;
+  std::vector<std::shared_ptr<Object>> globals(VM::GlobalSize);
+  std::shared_ptr<SymbolTable> symbolTable = symbol_table();
+
   for (;;) {
     auto line = linenoise::Readline(">> ");
 
@@ -27,18 +31,20 @@ inline int repl(std::shared_ptr<monkey::Environment> env,
 
         try {
           if (options.vm) {
-            Compiler compiler;
+            Compiler compiler(symbolTable, constants);
             compiler.compile(ast);
-            VM vm(compiler.bytecode());
+            constants = compiler.constants;
+            VM vm(compiler.bytecode(), globals);
             vm.run();
+            globals = vm.globals;
             auto last_poped = vm.last_popped_stack_elem();
             cout << last_poped->inspect() << endl;
+            linenoise::AddHistory(line.c_str());
           } else {
             auto val = eval(ast, env);
             if (val->type() != ERROR_OBJ) {
               cout << val->inspect() << endl;
               linenoise::AddHistory(line.c_str());
-              continue;
             } else {
               msgs.push_back(cast<Error>(val).message);
             }

@@ -17,13 +17,18 @@ struct Bytecode {
 };
 
 struct Compiler {
-  Instructions instructions;
+  std::shared_ptr<SymbolTable> symbolTable;
   std::vector<std::shared_ptr<Object>> constants;
 
+  Instructions instructions;
   EmittedInstruction lastInstruction;
   EmittedInstruction previousInstruction;
 
-  SymbolTable symbolTable;
+  Compiler() : symbolTable(symbol_table()){};
+
+  Compiler(std::shared_ptr<SymbolTable> symbolTable,
+           const std::vector<std::shared_ptr<Object>> &constants)
+      : symbolTable(symbolTable), constants(constants){};
 
   void compile(const std::shared_ptr<Ast> &ast) {
     using namespace peg::udl;
@@ -38,13 +43,13 @@ struct Compiler {
     case "ASSIGNMENT"_: {
       compile(ast->nodes[1]);
       auto name = std::string(ast->nodes[0]->token);
-      auto symbol = symbolTable.define(name);
+      auto symbol = symbolTable->define(name);
       emit(OpSetGlobal, {symbol.index});
       break;
     }
     case "IDENTIFIER"_: {
       auto name = std::string(ast->token);
-      const auto &symbol = symbolTable.resolve(name);
+      const auto &symbol = symbolTable->resolve(name);
       if (!symbol) {
         throw std::runtime_error(fmt::format("undefined variable {}", name));
       }

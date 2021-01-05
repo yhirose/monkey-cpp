@@ -122,3 +122,14 @@ TEST_CASE("Conditionals - vm", "[vm]") {
   run_vm_test("([vm]: Conditionals)", tests);
 }
 
+TEST_CASE("Global Let Statements - vm", "[vm]") {
+  vector<VmTestCase> tests{
+      {
+          {"let one = 1; one", make_integer(1)},
+          {"let one = 1; let two = 2; one + two", make_integer(3)},
+          {"let one = 1; let two = one + one; one + two", make_integer(3)},
+      },
+  };
+
+  run_vm_test("([vm]: Global Let Statements)", tests);
+}

@@ -4,18 +4,25 @@
 
 namespace monkey {
 
-const size_t StackSize = 2048;
-
 struct VM {
+  static const size_t StackSize = 2048;
+  static const size_t GlobalSize = 65535;
+
   std::vector<std::shared_ptr<Object>> constants;
   Instructions instructions;
 
   std::vector<std::shared_ptr<Object>> stack;
   size_t sp = 0;
 
+  std::vector<std::shared_ptr<Object>> globals;
+
   VM(const Bytecode &bytecode)
       : constants(bytecode.constants), instructions(bytecode.instructions),
-        stack(StackSize) {}
+        stack(StackSize), globals(GlobalSize) {}
+
+  VM(const Bytecode &bytecode, const std::vector<std::shared_ptr<Object>> &s)
+      : constants(bytecode.constants), instructions(bytecode.instructions),
+        stack(StackSize), globals(s) {}
 
   std::shared_ptr<Object> stack_top() const {
     if (sp == 0) { return nullptr; }
@@ -56,9 +63,19 @@ struct VM {
         auto pos = read_uint16(&instructions[ip + 1]);
         ip += 2;
         auto condition = pop();
-        if (!is_truthy(condition)) {
-          ip = pos - 1;
-        }
+        if (!is_truthy(condition)) { ip = pos - 1; }
+        break;
+      }
+      case OpSetGlobal: {
+        auto globalIndex = read_uint16(&instructions[ip + 1]);
+        ip += 2;
+        globals[globalIndex] = pop();
+        break;
+      }
+      case OpGetGlobal: {
+        auto globalIndex = read_uint16(&instructions[ip + 1]);
+        ip += 2;
+        push(globals[globalIndex]);
         break;
       }
       }
@@ -85,8 +102,7 @@ struct VM {
     auto left_type = left->type();
     auto right_type = right->type();
 
-    if (left_type == INTEGER_OBJ &&
-        right_type == INTEGER_OBJ) {
+    if (left_type == INTEGER_OBJ && right_type == INTEGER_OBJ) {
       execute_binary_integer_operation(op, left, right);
       return;
     }
@@ -123,8 +139,7 @@ struct VM {
     auto left_type = left->type();
     auto right_type = right->type();
 
-    if (left_type == INTEGER_OBJ ||
-        right_type == INTEGER_OBJ) {
+    if (left_type == INTEGER_OBJ || right_type == INTEGER_OBJ) {
       execute_integer_comparison(op, left, right);
       return;
     }
