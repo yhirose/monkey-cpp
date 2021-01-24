@@ -48,6 +48,17 @@ inline void test_null_object(std::shared_ptr<monkey::Object> actual) {
   CHECK(actual.get() == CONST_NULL.get());
 }
 
+inline void test_string_object(const std::string &expected,
+                               std::shared_ptr<monkey::Object> actual) {
+  using namespace monkey;
+
+  REQUIRE(actual);
+  CHECK(actual->type() == STRING_OBJ);
+
+  auto val = cast<String>(actual).value;
+  CHECK(val == expected);
+}
+
 inline monkey::Instructions
 concat_instructions(const std::vector<monkey::Instructions> &s) {
   monkey::Instructions out;

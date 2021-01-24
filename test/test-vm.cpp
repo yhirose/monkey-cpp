@@ -9,14 +9,18 @@ using namespace monkey;
 
 void test_expected_object(shared_ptr<Object> expected,
                           shared_ptr<Object> actual) {
-  if (expected->type() == INTEGER_OBJ) {
-    auto val = cast<Integer>(expected).value;
-    test_integer_object(val, actual);
-  } else if (expected->type() == BOOLEAN_OBJ) {
-    auto val = cast<Boolean>(expected).value;
-    test_boolean_object(val, actual);
-  } else if (expected->type() == NULL_OBJ) {
-    test_null_object(actual);
+  switch (expected->type()) {
+  case INTEGER_OBJ:
+    test_integer_object(cast<Integer>(expected).value, actual);
+    break;
+  case BOOLEAN_OBJ:
+    test_boolean_object(cast<Boolean>(expected).value, actual);
+    break;
+  case STRING_OBJ:
+    test_string_object(cast<String>(expected).value, actual);
+    break;
+  case NULL_OBJ: test_null_object(actual); break;
+  default: break;
   }
 }
 
@@ -132,4 +136,16 @@ TEST_CASE("Global Let Statements - vm", "[vm]") {
   };
 
   run_vm_test("([vm]: Global Let Statements)", tests);
+}
+
+TEST_CASE("String expressions - vm", "[vm]") {
+  vector<VmTestCase> tests{
+      {
+          {R"("monkey")", make_string("monkey")},
+          {R"("mon" + "key")", make_string("monkey")},
+          {R"("mon" + "key" + "banana")", make_string("monkeybanana")},
+      },
+  };
+
+  run_vm_test("([vm]: String expressions)", tests);
 }

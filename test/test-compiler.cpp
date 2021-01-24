@@ -25,9 +25,14 @@ void test_constants(vector<shared_ptr<Object>> expected,
 
   size_t i = 0;
   for (const auto &constant : expected) {
-    if (constant->type() == INTEGER_OBJ) {
-      auto val = cast<Integer>(constant).value;
-      test_integer_object(val, actual[i]);
+    switch (constant->type()) {
+    case INTEGER_OBJ:
+      test_integer_object(cast<Integer>(constant).value, actual[i]);
+      break;
+    case STRING_OBJ:
+      test_string_object(cast<String>(constant).value, actual[i]);
+      break;
+    default: break;
     }
     i++;
   }
@@ -321,4 +326,29 @@ TEST_CASE("Global Let Statements", "[compiler]") {
   };
 
   run_compiler_test("([compiler]: Conditionals)", tests);
+}
+
+TEST_CASE("String expressions", "[compiler]") {
+  vector<CompilerTestCase> tests{
+      {
+          R"("monkey")",
+          {make_string("monkey")},
+          {
+              make(OpConstant, {0}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          R"("mon" + "key")",
+          {make_string("mon"), make_string("key")},
+          {
+              make(OpConstant, {0}),
+              make(OpConstant, {1}),
+              make(OpAdd, {}),
+              make(OpPop, {}),
+          },
+      },
+  };
+
+  run_compiler_test("([compiler]: String expressions)", tests);
 }

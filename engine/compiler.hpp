@@ -153,6 +153,11 @@ struct Compiler {
       }
       break;
     }
+    case "STRING"_: {
+      auto str = std::make_shared<String>(ast->token);
+      emit(OpConstant, {add_constant(str)});
+      break;
+    }
     }
   }
 

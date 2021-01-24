@@ -107,6 +107,11 @@ struct VM {
       return;
     }
 
+    if (left_type == STRING_OBJ && right_type == STRING_OBJ) {
+      execute_binary_string_operation(op, left, right);
+      return;
+    }
+
     throw std::runtime_error(
         fmt::format("unsupported types for binary operation: {} {}", left_type,
                     right_type));
@@ -130,6 +135,18 @@ struct VM {
     }
 
     push(make_integer(result));
+  }
+
+  void execute_binary_string_operation(Opecode op, std::shared_ptr<Object> left,
+                                       std::shared_ptr<Object> right) {
+    auto left_value = cast<String>(left).value;
+    auto right_value = cast<String>(right).value;
+
+    if (op != OpAdd) {
+      throw std::runtime_error(fmt::format("unknown integer operator: {}", op));
+    }
+
+    push(make_string(left_value + right_value));
   }
 
   void execute_comparison(Opecode op) {
