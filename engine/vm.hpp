@@ -78,6 +78,15 @@ struct VM {
         push(globals[globalIndex]);
         break;
       }
+      case OpArray: {
+        auto numElements = read_uint16(&instructions[ip + 1]);
+        ip += 2;
+
+        auto array = buildArray(sp - numElements, sp);
+        sp = sp - numElements;
+        push(array);
+        break;
+      }
       }
     }
   }
@@ -217,6 +226,14 @@ struct VM {
     } else {
       return true;
     }
+  }
+
+  std::shared_ptr<Object> buildArray(int startIndex, int endIndex) {
+    auto arr = std::make_shared<Array>();
+    for (auto i = startIndex; i < endIndex; i++) {
+      arr->elements.push_back(std::move(stack[i]));
+    }
+    return arr;
   }
 };
 

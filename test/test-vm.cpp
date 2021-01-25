@@ -20,6 +20,16 @@ void test_expected_object(shared_ptr<Object> expected,
     test_string_object(cast<String>(expected).value, actual);
     break;
   case NULL_OBJ: test_null_object(actual); break;
+  case ARRAY_OBJ: {
+    REQUIRE(actual);
+    const auto& expectedElements = cast<Array>(expected).elements;
+    const auto& actualElements = cast<Array>(actual).elements;
+    REQUIRE(expectedElements.size() == actualElements.size());
+    for (size_t i = 0; i < expectedElements.size(); i++) {
+      REQUIRE(expectedElements[i] != actualElements[i]);
+    }
+    break;
+  }
   default: break;
   }
 }
@@ -148,4 +158,16 @@ TEST_CASE("String expressions - vm", "[vm]") {
   };
 
   run_vm_test("([vm]: String expressions)", tests);
+}
+
+TEST_CASE("Arrray Literals - vm", "[vm]") {
+  vector<VmTestCase> tests{
+      {
+          {"[]", make_array({})},
+          {"[1, 2, 3]", make_array({1, 2, 3})},
+          {"[1 + 2, 3 * 4, 5 + 6]", make_array({3, 12, 11})},
+      },
+  };
+
+  run_vm_test("([vm]: Arrray Literals)", tests);
 }

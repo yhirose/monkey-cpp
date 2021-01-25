@@ -158,6 +158,13 @@ struct Compiler {
       emit(OpConstant, {add_constant(str)});
       break;
     }
+    case "ARRAY"_: {
+      for (auto node : ast->nodes) {
+        compile(node);
+      }
+      emit(OpArray, {static_cast<int>(ast->nodes.size())});
+      break;
+    }
     }
   }
 

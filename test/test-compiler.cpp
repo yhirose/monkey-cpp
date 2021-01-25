@@ -352,3 +352,47 @@ TEST_CASE("String expressions", "[compiler]") {
 
   run_compiler_test("([compiler]: String expressions)", tests);
 }
+
+TEST_CASE("Array Literals", "[compiler]") {
+  vector<CompilerTestCase> tests{
+      {
+          "[]",
+          {},
+          {
+              make(OpArray, {0}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          "[1, 2, 3]",
+          {make_integer(1), make_integer(2), make_integer(3)},
+          {
+              make(OpConstant, {0}),
+              make(OpConstant, {1}),
+              make(OpConstant, {2}),
+              make(OpArray, {3}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          "[1 + 2, 3 - 4, 5 * 6]",
+          {make_integer(1), make_integer(2), make_integer(3), make_integer(4),
+           make_integer(5), make_integer(6)},
+          {
+              make(OpConstant, {0}),
+              make(OpConstant, {1}),
+              make(OpAdd, {}),
+              make(OpConstant, {2}),
+              make(OpConstant, {3}),
+              make(OpSub, {}),
+              make(OpConstant, {4}),
+              make(OpConstant, {5}),
+              make(OpMul, {}),
+              make(OpArray, {3}),
+              make(OpPop, {}),
+          },
+      },
+  };
+
+  run_compiler_test("([compiler]: Array Literals)", tests);
+}
