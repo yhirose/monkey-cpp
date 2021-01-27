@@ -443,3 +443,40 @@ TEST_CASE("Hash Literals", "[compiler]") {
 
   run_compiler_test("([compiler]: Hash Literals)", tests);
 }
+
+TEST_CASE("Index Expressions", "[compiler]") {
+  vector<CompilerTestCase> tests{
+      {
+          "[1, 2, 3][1 + 1]",
+          {make_integer(1), make_integer(2), make_integer(3), make_integer(1),
+           make_integer(1)},
+          {
+              make(OpConstant, {0}),
+              make(OpConstant, {1}),
+              make(OpConstant, {2}),
+              make(OpArray, {3}),
+              make(OpConstant, {3}),
+              make(OpConstant, {4}),
+              make(OpAdd, {}),
+              make(OpIndex, {}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          "{1: 2}[2 - 1]",
+          {make_integer(1), make_integer(2), make_integer(2), make_integer(1)},
+          {
+              make(OpConstant, {0}),
+              make(OpConstant, {1}),
+              make(OpHash, {2}),
+              make(OpConstant, {2}),
+              make(OpConstant, {3}),
+              make(OpSub, {}),
+              make(OpIndex, {}),
+              make(OpPop, {}),
+          },
+      },
+  };
+
+  run_compiler_test("([compiler]: Index Expressions)", tests);
+}

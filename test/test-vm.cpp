@@ -214,3 +214,22 @@ TEST_CASE("Hash Literals - vm", "[vm]") {
     }
   }
 }
+
+TEST_CASE("Index Expressions - vm", "[vm]") {
+  vector<VmTestCase> tests{
+      {
+          {"[1, 2, 3][1]", make_integer(2)},
+          {"[1, 2, 3][0 + 2]", make_integer(3)},
+          {"[[1, 1, 1]][0][0]", make_integer(1)},
+          {"[][0]", CONST_NULL},
+          {"[1, 2, 3][99]", CONST_NULL},
+          {"[1][-1]", CONST_NULL},
+          {"{1: 1, 2: 2}[1]", make_integer(1)},
+          {"{1: 1, 2: 2}[2]", make_integer(2)},
+          {"{1: 1}[0]", CONST_NULL},
+          {"{}[0]", CONST_NULL},
+      },
+  };
+
+  run_vm_test("([vm]: Index Expressions)", tests);
+}

@@ -173,6 +173,17 @@ struct Compiler {
       emit(OpHash, {static_cast<int>(ast->nodes.size() * 2)});
       break;
     }
+    case "CALL"_: {
+      compile(ast->nodes[0]);
+      for (auto i = 1u; i < ast->nodes.size(); i++) {
+        auto postfix = ast->nodes[i];
+        switch (postfix->original_tag) {
+        case "INDEX"_: compile(postfix->nodes[0]); break;
+        }
+        emit(OpIndex, {});
+      }
+      break;
+    }
     }
   }
 

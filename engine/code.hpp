@@ -33,6 +33,7 @@ enum OpecodeType {
   OpSetGlobal,
   OpArray,
   OpHash,
+  OpIndex,
 };
 
 struct Definition {
@@ -62,6 +63,7 @@ inline std::map<Opecode, Definition> &definitions() {
       {OpSetGlobal, {"OpSetGlobal", {2}}},
       {OpArray, {"OpArray", {2}}},
       {OpHash, {"OpHash", {2}}},
+      {OpIndex, {"OpIndex", {}}},
   };
   return definitions_;
 }

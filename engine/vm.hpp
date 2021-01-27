@@ -96,6 +96,12 @@ struct VM {
         push(hash);
         break;
       }
+      case OpIndex: {
+        auto index = pop();
+        auto left = pop();
+        execute_index_expression(left, index);
+        break;
+      }
       }
     }
   }
@@ -225,6 +231,42 @@ struct VM {
 
     auto value = cast<Integer>(operand).value;
     push(make_integer(value * -1));
+  }
+
+  void execute_index_expression(std::shared_ptr<Object> left,
+                                std::shared_ptr<Object> index) {
+    if (left->type() == ARRAY_OBJ && index->type() == INTEGER_OBJ) {
+      return execute_array_index(left, index);
+    } else if (left->type() == HASH_OBJ) {
+      return execute_hash_index(left, index);
+    } else {
+      throw std::runtime_error(
+          fmt::format("index operator not supported: {}", left->type()));
+    }
+  }
+
+  void execute_array_index(std::shared_ptr<Object> array,
+                           std::shared_ptr<Object> index) {
+    auto &arrayObject = cast<Array>(array);
+    auto i = cast<Integer>(index).value;
+    int64_t max = arrayObject.elements.size() - 1;
+    if (i < 0 || i > max) {
+      push(CONST_NULL);
+      return;
+    }
+    push(arrayObject.elements[i]);
+  }
+
+  void execute_hash_index(std::shared_ptr<Object> hash,
+                          std::shared_ptr<Object> index) {
+    auto &hashObject = cast<Hash>(hash);
+    auto key = index->hash_key();
+    auto it = hashObject.pairs.find(key);
+    if (it == hashObject.pairs.end()) {
+      push(CONST_NULL);
+      return;
+    }
+    push(it->second.value);
   }
 
   bool is_truthy(std::shared_ptr<Object> obj) const {
