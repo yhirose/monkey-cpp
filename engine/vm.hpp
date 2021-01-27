@@ -82,9 +82,18 @@ struct VM {
         auto numElements = read_uint16(&instructions[ip + 1]);
         ip += 2;
 
-        auto array = buildArray(sp - numElements, sp);
+        auto array = build_array(sp - numElements, sp);
         sp = sp - numElements;
         push(array);
+        break;
+      }
+      case OpHash: {
+        auto numElements = read_uint16(&instructions[ip + 1]);
+        ip += 2;
+
+        auto hash = build_hash(sp - numElements, sp);
+        sp = sp - numElements;
+        push(hash);
         break;
       }
       }
@@ -228,12 +237,22 @@ struct VM {
     }
   }
 
-  std::shared_ptr<Object> buildArray(int startIndex, int endIndex) {
+  std::shared_ptr<Object> build_array(int startIndex, int endIndex) {
     auto arr = std::make_shared<Array>();
     for (auto i = startIndex; i < endIndex; i++) {
       arr->elements.push_back(std::move(stack[i]));
     }
     return arr;
+  }
+
+  std::shared_ptr<Object> build_hash(int startIndex, int endIndex) {
+    auto hash = std::make_shared<Hash>();
+    for (auto i = startIndex; i < endIndex; i += 2) {
+      auto key = stack[i];
+      auto value = stack[i + 1];
+      hash->pairs[key->hash_key()] = HashPair{key, value};
+    }
+    return hash;
   }
 };
 

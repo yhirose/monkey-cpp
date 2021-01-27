@@ -22,8 +22,8 @@ void test_expected_object(shared_ptr<Object> expected,
   case NULL_OBJ: test_null_object(actual); break;
   case ARRAY_OBJ: {
     REQUIRE(actual);
-    const auto& expectedElements = cast<Array>(expected).elements;
-    const auto& actualElements = cast<Array>(actual).elements;
+    const auto &expectedElements = cast<Array>(expected).elements;
+    const auto &actualElements = cast<Array>(actual).elements;
     REQUIRE(expectedElements.size() == actualElements.size());
     for (size_t i = 0; i < expectedElements.size(); i++) {
       REQUIRE(expectedElements[i] != actualElements[i]);
@@ -170,4 +170,47 @@ TEST_CASE("Arrray Literals - vm", "[vm]") {
   };
 
   run_vm_test("([vm]: Arrray Literals)", tests);
+}
+
+TEST_CASE("Hash Literals - vm", "[vm]") {
+  struct VmHashTestCase {
+    string input;
+    map<HashKey, int64_t> expected;
+  };
+
+  vector<VmHashTestCase> tests{
+      {"{}", {}},
+      {"{1: 2, 2: 3}",
+       {
+           {make_integer(1)->hash_key(), int64_t(2)},
+           {make_integer(2)->hash_key(), int64_t(3)},
+       }},
+      {"{1 + 1: 2 * 2, 3 + 3: 4 * 4}",
+       {
+           {make_integer(2)->hash_key(), int64_t(4)},
+           {make_integer(6)->hash_key(), int64_t(16)},
+       }},
+  };
+
+  for (const auto &t : tests) {
+    auto ast = parse("([vm]: Arrray Literals)", t.input);
+    REQUIRE(ast != nullptr);
+
+    Compiler compiler;
+    compiler.compile(ast);
+
+    VM vm(compiler.bytecode());
+    vm.run();
+
+    auto actual = vm.last_popped_stack_elem();
+    REQUIRE(actual);
+
+    auto &actualParis = cast<Hash>(actual).pairs;
+    REQUIRE(t.expected.size() == actualParis.size());
+
+    for (auto &[expectedKey, expectedValue] : t.expected) {
+      auto pair = actualParis[expectedKey];
+      test_integer_object(expectedValue, pair.value);
+    }
+  }
 }

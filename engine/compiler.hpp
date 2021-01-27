@@ -165,6 +165,14 @@ struct Compiler {
       emit(OpArray, {static_cast<int>(ast->nodes.size())});
       break;
     }
+    case "HASH"_: {
+      for (auto node : ast->nodes) {
+        compile(node->nodes[0]);
+        compile(node->nodes[1]);
+      }
+      emit(OpHash, {static_cast<int>(ast->nodes.size() * 2)});
+      break;
+    }
     }
   }
 
