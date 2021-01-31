@@ -34,6 +34,9 @@ enum OpecodeType {
   OpArray,
   OpHash,
   OpIndex,
+  OpCall,
+  OpReturnValue,
+  OpReturn,
 };
 
 struct Definition {
@@ -64,6 +67,9 @@ inline std::map<Opecode, Definition> &definitions() {
       {OpArray, {"OpArray", {2}}},
       {OpHash, {"OpHash", {2}}},
       {OpIndex, {"OpIndex", {}}},
+      {OpCall, {"OpCall", {}}},
+      {OpReturnValue, {"OpReturnValue", {}}},
+      {OpReturn, {"OpReturn", {}}},
   };
   return definitions_;
 }
@@ -155,7 +161,7 @@ inline std::string to_string(const Instructions &ins) {
   while (i < ins.size()) {
     auto &def = lookup(ins[i]);
     auto [operands, read] = read_operands(def, ins, i + 1);
-    out += fmt::format("{:04} {}\n", i, fmt_instruction(def, operands));
+    out += fmt::format(R"({:04} {}\n)", i, fmt_instruction(def, operands));
     i += 1 + read;
   }
 

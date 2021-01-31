@@ -32,10 +32,7 @@ TEST_CASE("Instructions string", "[code]") {
       make(OpConstant, {65535}),
   };
 
-  string expected = R"(0000 OpAdd
-0001 OpConstant 2
-0004 OpConstant 65535
-)";
+  string expected = R"(0000 OpAdd\n0001 OpConstant 2\n0004 OpConstant 65535\n)";
 
   auto concatted = concat_instructions(instructions);
 

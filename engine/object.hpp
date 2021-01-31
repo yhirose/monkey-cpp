@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ast.hpp>
+#include <code.hpp>
 #include <sstream>
 
 namespace monkey {
@@ -14,6 +15,7 @@ enum ObjectType {
   RETURN_OBJ,
   ERROR_OBJ,
   FUNCTION_OBJ,
+  COMPILED_FUNCTION_OBJ,
   STRING_OBJ,
   BUILTIN_OBJ,
   ARRAY_OBJ,
@@ -126,6 +128,24 @@ struct Function : public Object {
   const std::shared_ptr<Ast> body;
 };
 
+struct CompiledFunction : public Object {
+  CompiledFunction() = default;
+
+  CompiledFunction(Instructions instructions)
+      : instructions(std::move(instructions)) {}
+
+  ObjectType type() const override { return COMPILED_FUNCTION_OBJ; }
+  std::string name() const override { return "COMPILED_FUNCTION"; }
+
+  std::string inspect() const override {
+    std::stringstream ss;
+    ss << "CompiledFunction[" << std::hex << this << std::dec << "]";
+    return ss.str();
+  }
+
+  Instructions instructions;
+};
+
 // https://docs.microsoft.com/en-us/cpp/porting/fix-your-dependencies-on-library-internals?view=vs-2019
 inline uint64_t fnv1a_hash_bytes(const char *first, size_t count) {
   const auto fnv_offset_basis = 14695981039346656037ULL;
@@ -231,6 +251,16 @@ inline std::shared_ptr<Object> make_array(std::vector<int64_t> numbers) {
     arr->elements.emplace_back(make_integer(n));
   }
   return arr;
+}
+
+inline std::shared_ptr<Object>
+make_compiled_function(std::vector<Instructions> items) {
+  auto fn = std::make_shared<CompiledFunction>();
+  for (auto instructions : items) {
+    fn->instructions.insert(fn->instructions.end(), instructions.begin(),
+                            instructions.end());
+  }
+  return fn;
 }
 
 const std::shared_ptr<Object> CONST_TRUE = std::make_shared<Boolean>(true);

@@ -4,25 +4,43 @@
 
 namespace monkey {
 
+struct Frame {
+  std::shared_ptr<CompiledFunction> fn;
+  int ip = -1;
+
+  Frame(std::shared_ptr<CompiledFunction> fn) : fn(fn) {}
+
+  const Instructions &instructions() const { return fn->instructions; }
+};
+
 struct VM {
   static const size_t StackSize = 2048;
   static const size_t GlobalSize = 65535;
+  static const size_t MaxFrames = 1024;
 
   std::vector<std::shared_ptr<Object>> constants;
-  Instructions instructions;
 
   std::vector<std::shared_ptr<Object>> stack;
   size_t sp = 0;
 
   std::vector<std::shared_ptr<Object>> globals;
 
+  std::vector<std::shared_ptr<Frame>> frames;
+  int framesIndex = 1;
+
   VM(const Bytecode &bytecode)
-      : constants(bytecode.constants), instructions(bytecode.instructions),
-        stack(StackSize), globals(GlobalSize) {}
+      : constants(bytecode.constants),
+        stack(StackSize), globals(GlobalSize), frames(MaxFrames) {
+    auto fn = std::make_shared<CompiledFunction>(bytecode.instructions);
+    frames[0] = std::make_shared<Frame>(fn);
+  }
 
   VM(const Bytecode &bytecode, const std::vector<std::shared_ptr<Object>> &s)
-      : constants(bytecode.constants), instructions(bytecode.instructions),
-        stack(StackSize), globals(s) {}
+      : constants(bytecode.constants),
+        stack(StackSize), globals(s), frames(MaxFrames) {
+    auto fn = std::make_shared<CompiledFunction>(bytecode.instructions);
+    frames[0] = std::make_shared<Frame>(fn);
+  }
 
   std::shared_ptr<Object> stack_top() const {
     if (sp == 0) { return nullptr; }
@@ -31,13 +49,32 @@ struct VM {
 
   std::shared_ptr<Object> last_popped_stack_elem() const { return stack[sp]; }
 
+  std::shared_ptr<Frame> current_frame() const {
+    return frames[framesIndex - 1];
+  }
+
+  void push_frame(std::shared_ptr<Frame> f) {
+    frames[framesIndex] = f;
+    framesIndex++;
+  }
+
+  std::shared_ptr<Frame> pop_frame() {
+    framesIndex--;
+    return frames[framesIndex];
+  }
+
   void run() {
-    for (size_t ip = 0; ip < instructions.size(); ip++) {
-      Opecode op = instructions[ip];
+    while (current_frame()->ip < static_cast<int>(current_frame()->instructions().size()) - 1) {
+      current_frame()->ip++;
+
+      auto ip = current_frame()->ip;
+      const auto &ins = current_frame()->instructions();
+      Opecode op = ins[ip];
+
       switch (op) {
       case OpConstant: {
-        auto constIndex = read_uint16(&instructions[ip + 1]);
-        ip += 2;
+        auto constIndex = read_uint16(&current_frame()->instructions()[ip + 1]);
+        current_frame()->ip += 2;
         push(constants[constIndex]);
         break;
       }
@@ -55,32 +92,32 @@ struct VM {
       case OpMinus: execute_minus_operator(); break;
       case OpPop: pop(); break;
       case OpJump: {
-        auto pos = read_uint16(&instructions[ip + 1]);
-        ip = pos - 1;
+        auto pos = read_uint16(&current_frame()->instructions()[ip + 1]);
+        current_frame()->ip = pos - 1;
         break;
       }
       case OpJumpNotTruthy: {
-        auto pos = read_uint16(&instructions[ip + 1]);
-        ip += 2;
+        auto pos = read_uint16(&current_frame()->instructions()[ip + 1]);
+        current_frame()->ip += 2;
         auto condition = pop();
-        if (!is_truthy(condition)) { ip = pos - 1; }
+        if (!is_truthy(condition)) { current_frame()->ip = pos - 1; }
         break;
       }
       case OpSetGlobal: {
-        auto globalIndex = read_uint16(&instructions[ip + 1]);
-        ip += 2;
+        auto globalIndex = read_uint16(&current_frame()->instructions()[ip + 1]);
+        current_frame()->ip += 2;
         globals[globalIndex] = pop();
         break;
       }
       case OpGetGlobal: {
-        auto globalIndex = read_uint16(&instructions[ip + 1]);
-        ip += 2;
+        auto globalIndex = read_uint16(&current_frame()->instructions()[ip + 1]);
+        current_frame()->ip += 2;
         push(globals[globalIndex]);
         break;
       }
       case OpArray: {
-        auto numElements = read_uint16(&instructions[ip + 1]);
-        ip += 2;
+        auto numElements = read_uint16(&current_frame()->instructions()[ip + 1]);
+        current_frame()->ip += 2;
 
         auto array = build_array(sp - numElements, sp);
         sp = sp - numElements;
@@ -88,8 +125,8 @@ struct VM {
         break;
       }
       case OpHash: {
-        auto numElements = read_uint16(&instructions[ip + 1]);
-        ip += 2;
+        auto numElements = read_uint16(&current_frame()->instructions()[ip + 1]);
+        current_frame()->ip += 2;
 
         auto hash = build_hash(sp - numElements, sp);
         sp = sp - numElements;
@@ -100,6 +137,25 @@ struct VM {
         auto index = pop();
         auto left = pop();
         execute_index_expression(left, index);
+        break;
+      }
+      case OpCall: {
+        auto fn = std::dynamic_pointer_cast<CompiledFunction>(stack[sp - 1]);
+        auto frame = std::make_shared<Frame>(fn);
+        push_frame(frame);
+        break;
+      }
+      case OpReturnValue: {
+        auto returnValue = pop();
+        pop_frame();
+        pop();
+        push(returnValue);
+        break;
+      }
+      case OpReturn: {
+        pop_frame();
+        pop();
+        push(CONST_NULL);
         break;
       }
       }

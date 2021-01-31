@@ -8,19 +8,19 @@
 using namespace std;
 using namespace monkey;
 
-void test_instructions(vector<Instructions> expected, Instructions actual) {
-  auto concatted = concat_instructions(expected);
-  REQUIRE(actual.size() == concatted.size());
+void test_instructions(const Instructions &expected,
+                       const Instructions &actual) {
+  REQUIRE(to_string(expected) == to_string(actual));
 
   size_t i = 0;
-  for (const auto &ins : concatted) {
+  for (const auto &ins : expected) {
     CHECK(actual[i] == ins);
     i++;
   }
 }
 
-void test_constants(vector<shared_ptr<Object>> expected,
-                    vector<shared_ptr<Object>> actual) {
+void test_constants(const vector<shared_ptr<Object>> &expected,
+                    const vector<shared_ptr<Object>> &actual) {
   REQUIRE(expected.size() == actual.size());
 
   size_t i = 0;
@@ -32,6 +32,11 @@ void test_constants(vector<shared_ptr<Object>> expected,
     case STRING_OBJ:
       test_string_object(cast<String>(constant).value, actual[i]);
       break;
+    case COMPILED_FUNCTION_OBJ: {
+      test_instructions(cast<CompiledFunction>(constant).instructions,
+                        cast<CompiledFunction>(actual[i]).instructions);
+      break;
+    }
     default: break;
     }
     i++;
@@ -55,7 +60,8 @@ void run_compiler_test(const char *name,
     compiler.compile(ast);
     auto bytecode = compiler.bytecode();
 
-    test_instructions(t.expectedInstructions, bytecode.instructions);
+    test_instructions(concat_instructions(t.expectedInstructions),
+                      bytecode.instructions);
     test_constants(t.expectedConstants, bytecode.constants);
   }
 }
@@ -479,4 +485,135 @@ TEST_CASE("Index Expressions", "[compiler]") {
   };
 
   run_compiler_test("([compiler]: Index Expressions)", tests);
+}
+
+TEST_CASE("Functions", "[compiler]") {
+  vector<CompilerTestCase> tests{
+      {
+          "fn() { return 5 + 10 }",
+          {make_integer(5), make_integer(10),
+           make_compiled_function({
+               make(OpConstant, {0}),
+               make(OpConstant, {1}),
+               make(OpAdd, {}),
+               make(OpReturnValue, {}),
+           })},
+          {
+              make(OpConstant, {2}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          "fn() { 5 + 10 }",
+          {make_integer(5), make_integer(10),
+           make_compiled_function({
+               make(OpConstant, {0}),
+               make(OpConstant, {1}),
+               make(OpAdd, {}),
+               make(OpReturnValue, {}),
+           })},
+          {
+              make(OpConstant, {2}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          "fn() { 1; 2 }",
+          {make_integer(1), make_integer(2),
+           make_compiled_function({
+               make(OpConstant, {0}),
+               make(OpPop, {}),
+               make(OpConstant, {1}),
+               make(OpReturnValue, {}),
+           })},
+          {
+              make(OpConstant, {2}),
+              make(OpPop, {}),
+          },
+      },
+  };
+
+  run_compiler_test("([compiler]: Functions)", tests);
+}
+
+TEST_CASE("Functions Without Return Value", "[compiler]") {
+  vector<CompilerTestCase> tests{
+      {
+          "fn() { }",
+          {make_compiled_function({
+              make(OpReturn, {}),
+          })},
+          {
+              make(OpConstant, {0}),
+              make(OpPop, {}),
+          },
+      },
+  };
+
+  run_compiler_test("([compiler]: Functions Without Return Value)", tests);
+}
+
+TEST_CASE("Function Calls", "[compiler]") {
+  vector<CompilerTestCase> tests{
+      {
+          "fn() { 24 }();",
+          {make_integer(24), make_compiled_function({
+                                 make(OpConstant, {0}),
+                                 make(OpReturnValue, {}),
+                             })},
+          {
+              make(OpConstant, {1}),
+              make(OpCall, {}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          R"(
+          let noArg = fn() { 24 };
+          noArg();
+          )",
+          {make_integer(24), make_compiled_function({
+                                 make(OpConstant, {0}),
+                                 make(OpReturnValue, {}),
+                             })},
+          {
+              make(OpConstant, {1}),
+              make(OpSetGlobal, {0}),
+              make(OpGetGlobal, {0}),
+              make(OpCall, {}),
+              make(OpPop, {}),
+          },
+      },
+  };
+
+  run_compiler_test("([compiler]: Function Calls)", tests);
+}
+
+TEST_CASE("Compiler Scopes", "[compiler]") {
+  Compiler compiler;
+  REQUIRE(compiler.scopeIndex == 0);
+
+  compiler.emit(OpMul, {});
+
+  compiler.enter_scope();
+  REQUIRE(compiler.scopeIndex == 1);
+
+  compiler.emit(OpSub, {});
+
+  REQUIRE(compiler.current_instructions().size() == 1);
+
+  auto last = compiler.last_instruction();
+  REQUIRE(last.opecode == OpSub);
+
+  compiler.leave_scope();
+  REQUIRE(compiler.scopeIndex == 0);
+
+  compiler.emit(OpAdd, {});
+  REQUIRE(compiler.current_instructions().size() == 2);
+
+  last = compiler.last_instruction();
+  REQUIRE(last.opecode == OpAdd);
+
+  auto previous = compiler.previous_instruction();
+  REQUIRE(previous.opecode == OpMul);
 }

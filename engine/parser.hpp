@@ -44,7 +44,7 @@ ARRAY                  <-  '[' LIST(EXPRESSION, ',') ']'
 HASH                   <-  '{' LIST(HASH_PAIR, ',') '}'
 HASH_PAIR              <-  EXPRESSION ':' EXPRESSION
 
-IDENTIFIER             <-  !KEYWORD < [a-zA-Z]+ >
+IDENTIFIER             <-  < [a-zA-Z]+ >
 INTEGER                <-  < [0-9]+ >
 STRING                 <-  < ["] < (!["] .)* > ["] >
 BOOLEAN                <-  'true' / 'false'
@@ -58,7 +58,9 @@ LIST(ITEM, DELM)       <-  (ITEM (~DELM ITEM)*)?
 
 LINE_COMMENT           <-  '//' (!LINE_END .)* &LINE_END
 LINE_END               <-  '\r\n' / '\r' / '\n' / !.
+
 %whitespace            <-  ([ \t\r\n]+ / LINE_COMMENT)*
+%word                  <-  [a-zA-Z]+
 
 )";
 

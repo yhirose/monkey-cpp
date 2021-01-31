@@ -22,7 +22,7 @@ inline void test_integer_object(int64_t expected,
   using namespace monkey;
 
   REQUIRE(actual);
-  CHECK(actual->type() == INTEGER_OBJ);
+  REQUIRE(actual->type() == INTEGER_OBJ);
 
   auto val = cast<Integer>(actual).value;
   CHECK(val == expected);
@@ -33,7 +33,7 @@ inline void test_boolean_object(bool expected,
   using namespace monkey;
 
   REQUIRE(actual);
-  CHECK(actual->type() == BOOLEAN_OBJ);
+  REQUIRE(actual->type() == BOOLEAN_OBJ);
 
   auto val = cast<Boolean>(actual).value;
   CHECK(val == expected);
@@ -43,7 +43,7 @@ inline void test_null_object(std::shared_ptr<monkey::Object> actual) {
   using namespace monkey;
 
   REQUIRE(actual);
-  CHECK(actual->type() == NULL_OBJ);
+  REQUIRE(actual->type() == NULL_OBJ);
 
   CHECK(actual.get() == CONST_NULL.get());
 }
@@ -53,7 +53,7 @@ inline void test_string_object(const std::string &expected,
   using namespace monkey;
 
   REQUIRE(actual);
-  CHECK(actual->type() == STRING_OBJ);
+  REQUIRE(actual->type() == STRING_OBJ);
 
   auto val = cast<String>(actual).value;
   CHECK(val == expected);
