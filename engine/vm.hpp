@@ -7,8 +7,10 @@ namespace monkey {
 struct Frame {
   std::shared_ptr<CompiledFunction> fn;
   int ip = -1;
+  int basePointer = -1;
 
-  Frame(std::shared_ptr<CompiledFunction> fn) : fn(fn) {}
+  Frame(std::shared_ptr<CompiledFunction> fn, int basePointer)
+      : fn(fn), basePointer(basePointer) {}
 
   const Instructions &instructions() const { return fn->instructions; }
 };
@@ -29,17 +31,17 @@ struct VM {
   int framesIndex = 1;
 
   VM(const Bytecode &bytecode)
-      : constants(bytecode.constants),
-        stack(StackSize), globals(GlobalSize), frames(MaxFrames) {
+      : constants(bytecode.constants), stack(StackSize), globals(GlobalSize),
+        frames(MaxFrames) {
     auto fn = std::make_shared<CompiledFunction>(bytecode.instructions);
-    frames[0] = std::make_shared<Frame>(fn);
+    frames[0] = std::make_shared<Frame>(fn, 0);
   }
 
   VM(const Bytecode &bytecode, const std::vector<std::shared_ptr<Object>> &s)
-      : constants(bytecode.constants),
-        stack(StackSize), globals(s), frames(MaxFrames) {
+      : constants(bytecode.constants), stack(StackSize), globals(s),
+        frames(MaxFrames) {
     auto fn = std::make_shared<CompiledFunction>(bytecode.instructions);
-    frames[0] = std::make_shared<Frame>(fn);
+    frames[0] = std::make_shared<Frame>(fn, 0);
   }
 
   std::shared_ptr<Object> stack_top() const {
@@ -64,7 +66,8 @@ struct VM {
   }
 
   void run() {
-    while (current_frame()->ip < static_cast<int>(current_frame()->instructions().size()) - 1) {
+    while (current_frame()->ip <
+           static_cast<int>(current_frame()->instructions().size()) - 1) {
       current_frame()->ip++;
 
       auto ip = current_frame()->ip;
@@ -104,19 +107,22 @@ struct VM {
         break;
       }
       case OpSetGlobal: {
-        auto globalIndex = read_uint16(&current_frame()->instructions()[ip + 1]);
+        auto globalIndex =
+            read_uint16(&current_frame()->instructions()[ip + 1]);
         current_frame()->ip += 2;
         globals[globalIndex] = pop();
         break;
       }
       case OpGetGlobal: {
-        auto globalIndex = read_uint16(&current_frame()->instructions()[ip + 1]);
+        auto globalIndex =
+            read_uint16(&current_frame()->instructions()[ip + 1]);
         current_frame()->ip += 2;
         push(globals[globalIndex]);
         break;
       }
       case OpArray: {
-        auto numElements = read_uint16(&current_frame()->instructions()[ip + 1]);
+        auto numElements =
+            read_uint16(&current_frame()->instructions()[ip + 1]);
         current_frame()->ip += 2;
 
         auto array = build_array(sp - numElements, sp);
@@ -125,7 +131,8 @@ struct VM {
         break;
       }
       case OpHash: {
-        auto numElements = read_uint16(&current_frame()->instructions()[ip + 1]);
+        auto numElements =
+            read_uint16(&current_frame()->instructions()[ip + 1]);
         current_frame()->ip += 2;
 
         auto hash = build_hash(sp - numElements, sp);
@@ -141,21 +148,36 @@ struct VM {
       }
       case OpCall: {
         auto fn = std::dynamic_pointer_cast<CompiledFunction>(stack[sp - 1]);
-        auto frame = std::make_shared<Frame>(fn);
+        auto frame = std::make_shared<Frame>(fn, sp);
         push_frame(frame);
+        sp = frame->basePointer + fn->numLocals;
         break;
       }
       case OpReturnValue: {
         auto returnValue = pop();
-        pop_frame();
-        pop();
+        auto frame = pop_frame();
+        sp = frame->basePointer - 1;
         push(returnValue);
         break;
       }
       case OpReturn: {
-        pop_frame();
-        pop();
+        auto frame = pop_frame();
+        sp = frame->basePointer - 1;
         push(CONST_NULL);
+        break;
+      }
+      case OpSetLocal: {
+        auto localIndex = read_uint8(&current_frame()->instructions()[ip + 1]);
+        current_frame()->ip += 1;
+        auto frame = current_frame();
+        stack[frame->basePointer + localIndex] = pop();
+        break;
+      }
+      case OpGetLocal: {
+        auto localIndex = read_uint8(&current_frame()->instructions()[ip + 1]);
+        current_frame()->ip += 1;
+        auto frame = current_frame();
+        push(stack[frame->basePointer + localIndex]);
         break;
       }
       }

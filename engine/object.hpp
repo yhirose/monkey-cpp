@@ -144,6 +144,7 @@ struct CompiledFunction : public Object {
   }
 
   Instructions instructions;
+  int          numLocals = 0;
 };
 
 // https://docs.microsoft.com/en-us/cpp/porting/fix-your-dependencies-on-library-internals?view=vs-2019
@@ -254,12 +255,13 @@ inline std::shared_ptr<Object> make_array(std::vector<int64_t> numbers) {
 }
 
 inline std::shared_ptr<Object>
-make_compiled_function(std::vector<Instructions> items) {
+make_compiled_function(std::vector<Instructions> items, int numLocals = 0) {
   auto fn = std::make_shared<CompiledFunction>();
   for (auto instructions : items) {
     fn->instructions.insert(fn->instructions.end(), instructions.begin(),
                             instructions.end());
   }
+  fn->numLocals = numLocals;
   return fn;
 }
 

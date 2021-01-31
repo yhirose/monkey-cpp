@@ -70,7 +70,10 @@ TEST_CASE("Integer arithmetic", "[compiler]") {
   vector<CompilerTestCase> tests{
       {
           "1 + 2",
-          {make_integer(1), make_integer(2)},
+          {
+              make_integer(1),
+              make_integer(2),
+          },
           {
               make(OpConstant, {0}),
               make(OpConstant, {1}),
@@ -80,7 +83,10 @@ TEST_CASE("Integer arithmetic", "[compiler]") {
       },
       {
           "1 - 2",
-          {make_integer(1), make_integer(2)},
+          {
+              make_integer(1),
+              make_integer(2),
+          },
           {
               make(OpConstant, {0}),
               make(OpConstant, {1}),
@@ -90,7 +96,10 @@ TEST_CASE("Integer arithmetic", "[compiler]") {
       },
       {
           "1 * 2",
-          {make_integer(1), make_integer(2)},
+          {
+              make_integer(1),
+              make_integer(2),
+          },
           {
               make(OpConstant, {0}),
               make(OpConstant, {1}),
@@ -100,7 +109,10 @@ TEST_CASE("Integer arithmetic", "[compiler]") {
       },
       {
           "1 / 2",
-          {make_integer(1), make_integer(2)},
+          {
+              make_integer(1),
+              make_integer(2),
+          },
           {
               make(OpConstant, {0}),
               make(OpConstant, {1}),
@@ -110,7 +122,10 @@ TEST_CASE("Integer arithmetic", "[compiler]") {
       },
       {
           "1; 2",
-          {make_integer(1), make_integer(2)},
+          {
+              make_integer(1),
+              make_integer(2),
+          },
           {
               make(OpConstant, {0}),
               make(OpPop, {}),
@@ -152,7 +167,10 @@ TEST_CASE("Boolean expressions", "[compiler]") {
       },
       {
           "1 > 2",
-          {make_integer(1), make_integer(2)},
+          {
+              make_integer(1),
+              make_integer(2),
+          },
           {
               make(OpConstant, {0}),
               make(OpConstant, {1}),
@@ -172,7 +190,10 @@ TEST_CASE("Boolean expressions", "[compiler]") {
       },
       {
           "1 == 2",
-          {make_integer(1), make_integer(2)},
+          {
+              make_integer(1),
+              make_integer(2),
+          },
           {
               make(OpConstant, {0}),
               make(OpConstant, {1}),
@@ -182,7 +203,10 @@ TEST_CASE("Boolean expressions", "[compiler]") {
       },
       {
           "1 != 2",
-          {make_integer(1), make_integer(2)},
+          {
+              make_integer(1),
+              make_integer(2),
+          },
           {
               make(OpConstant, {0}),
               make(OpConstant, {1}),
@@ -254,7 +278,10 @@ TEST_CASE("Conditionals", "[compiler]") {
   vector<CompilerTestCase> tests{
       {
           "if (true) { 10 }; 3333;",
-          {make_integer(10), make_integer(3333)},
+          {
+              make_integer(10),
+              make_integer(3333),
+          },
           {
               /* 0000 */ make(OpTrue, {}),
               /* 0001 */ make(OpJumpNotTruthy, {10}),
@@ -268,7 +295,11 @@ TEST_CASE("Conditionals", "[compiler]") {
       },
       {
           "if (true) { 10 } else { 20 } 3333;",
-          {make_integer(10), make_integer(20), make_integer(3333)},
+          {
+              make_integer(10),
+              make_integer(20),
+              make_integer(3333),
+          },
           {
               /* 0000 */ make(OpTrue, {}),
               /* 0001 */ make(OpJumpNotTruthy, {10}),
@@ -292,7 +323,10 @@ TEST_CASE("Global Let Statements", "[compiler]") {
             let one = 1;
             let two = 2;
           )",
-          {make_integer(1), make_integer(2)},
+          {
+              make_integer(1),
+              make_integer(2),
+          },
           {
               make(OpConstant, {0}),
               make(OpSetGlobal, {0}),
@@ -305,7 +339,9 @@ TEST_CASE("Global Let Statements", "[compiler]") {
             let one = 1;
             one;
           )",
-          {make_integer(1)},
+          {
+              make_integer(1),
+          },
           {
               make(OpConstant, {0}),
               make(OpSetGlobal, {0}),
@@ -331,14 +367,16 @@ TEST_CASE("Global Let Statements", "[compiler]") {
       },
   };
 
-  run_compiler_test("([compiler]: Conditionals)", tests);
+  run_compiler_test("([compiler]: Global Let Statements)", tests);
 }
 
 TEST_CASE("String expressions", "[compiler]") {
   vector<CompilerTestCase> tests{
       {
           R"("monkey")",
-          {make_string("monkey")},
+          {
+              make_string("monkey"),
+          },
           {
               make(OpConstant, {0}),
               make(OpPop, {}),
@@ -346,7 +384,10 @@ TEST_CASE("String expressions", "[compiler]") {
       },
       {
           R"("mon" + "key")",
-          {make_string("mon"), make_string("key")},
+          {
+              make_string("mon"),
+              make_string("key"),
+          },
           {
               make(OpConstant, {0}),
               make(OpConstant, {1}),
@@ -371,7 +412,11 @@ TEST_CASE("Array Literals", "[compiler]") {
       },
       {
           "[1, 2, 3]",
-          {make_integer(1), make_integer(2), make_integer(3)},
+          {
+              make_integer(1),
+              make_integer(2),
+              make_integer(3),
+          },
           {
               make(OpConstant, {0}),
               make(OpConstant, {1}),
@@ -382,8 +427,14 @@ TEST_CASE("Array Literals", "[compiler]") {
       },
       {
           "[1 + 2, 3 - 4, 5 * 6]",
-          {make_integer(1), make_integer(2), make_integer(3), make_integer(4),
-           make_integer(5), make_integer(6)},
+          {
+              make_integer(1),
+              make_integer(2),
+              make_integer(3),
+              make_integer(4),
+              make_integer(5),
+              make_integer(6),
+          },
           {
               make(OpConstant, {0}),
               make(OpConstant, {1}),
@@ -415,8 +466,14 @@ TEST_CASE("Hash Literals", "[compiler]") {
       },
       {
           "{1: 2, 3: 4, 5: 6}",
-          {make_integer(1), make_integer(2), make_integer(3), make_integer(4),
-           make_integer(5), make_integer(6)},
+          {
+              make_integer(1),
+              make_integer(2),
+              make_integer(3),
+              make_integer(4),
+              make_integer(5),
+              make_integer(6),
+          },
           {
               make(OpConstant, {0}),
               make(OpConstant, {1}),
@@ -430,8 +487,14 @@ TEST_CASE("Hash Literals", "[compiler]") {
       },
       {
           "{1: 2 + 3, 4: 5 * 6}",
-          {make_integer(1), make_integer(2), make_integer(3), make_integer(4),
-           make_integer(5), make_integer(6)},
+          {
+              make_integer(1),
+              make_integer(2),
+              make_integer(3),
+              make_integer(4),
+              make_integer(5),
+              make_integer(6),
+          },
           {
               make(OpConstant, {0}),
               make(OpConstant, {1}),
@@ -454,8 +517,13 @@ TEST_CASE("Index Expressions", "[compiler]") {
   vector<CompilerTestCase> tests{
       {
           "[1, 2, 3][1 + 1]",
-          {make_integer(1), make_integer(2), make_integer(3), make_integer(1),
-           make_integer(1)},
+          {
+              make_integer(1),
+              make_integer(2),
+              make_integer(3),
+              make_integer(1),
+              make_integer(1),
+          },
           {
               make(OpConstant, {0}),
               make(OpConstant, {1}),
@@ -470,7 +538,12 @@ TEST_CASE("Index Expressions", "[compiler]") {
       },
       {
           "{1: 2}[2 - 1]",
-          {make_integer(1), make_integer(2), make_integer(2), make_integer(1)},
+          {
+              make_integer(1),
+              make_integer(2),
+              make_integer(2),
+              make_integer(1),
+          },
           {
               make(OpConstant, {0}),
               make(OpConstant, {1}),
@@ -491,13 +564,16 @@ TEST_CASE("Functions", "[compiler]") {
   vector<CompilerTestCase> tests{
       {
           "fn() { return 5 + 10 }",
-          {make_integer(5), make_integer(10),
-           make_compiled_function({
-               make(OpConstant, {0}),
-               make(OpConstant, {1}),
-               make(OpAdd, {}),
-               make(OpReturnValue, {}),
-           })},
+          {
+              make_integer(5),
+              make_integer(10),
+              make_compiled_function({
+                  make(OpConstant, {0}),
+                  make(OpConstant, {1}),
+                  make(OpAdd, {}),
+                  make(OpReturnValue, {}),
+              }),
+          },
           {
               make(OpConstant, {2}),
               make(OpPop, {}),
@@ -505,13 +581,16 @@ TEST_CASE("Functions", "[compiler]") {
       },
       {
           "fn() { 5 + 10 }",
-          {make_integer(5), make_integer(10),
-           make_compiled_function({
-               make(OpConstant, {0}),
-               make(OpConstant, {1}),
-               make(OpAdd, {}),
-               make(OpReturnValue, {}),
-           })},
+          {
+              make_integer(5),
+              make_integer(10),
+              make_compiled_function({
+                  make(OpConstant, {0}),
+                  make(OpConstant, {1}),
+                  make(OpAdd, {}),
+                  make(OpReturnValue, {}),
+              }),
+          },
           {
               make(OpConstant, {2}),
               make(OpPop, {}),
@@ -519,13 +598,16 @@ TEST_CASE("Functions", "[compiler]") {
       },
       {
           "fn() { 1; 2 }",
-          {make_integer(1), make_integer(2),
-           make_compiled_function({
-               make(OpConstant, {0}),
-               make(OpPop, {}),
-               make(OpConstant, {1}),
-               make(OpReturnValue, {}),
-           })},
+          {
+              make_integer(1),
+              make_integer(2),
+              make_compiled_function({
+                  make(OpConstant, {0}),
+                  make(OpPop, {}),
+                  make(OpConstant, {1}),
+                  make(OpReturnValue, {}),
+              }),
+          },
           {
               make(OpConstant, {2}),
               make(OpPop, {}),
@@ -540,9 +622,11 @@ TEST_CASE("Functions Without Return Value", "[compiler]") {
   vector<CompilerTestCase> tests{
       {
           "fn() { }",
-          {make_compiled_function({
-              make(OpReturn, {}),
-          })},
+          {
+              make_compiled_function({
+                  make(OpReturn, {}),
+              }),
+          },
           {
               make(OpConstant, {0}),
               make(OpPop, {}),
@@ -557,10 +641,13 @@ TEST_CASE("Function Calls", "[compiler]") {
   vector<CompilerTestCase> tests{
       {
           "fn() { 24 }();",
-          {make_integer(24), make_compiled_function({
-                                 make(OpConstant, {0}),
-                                 make(OpReturnValue, {}),
-                             })},
+          {
+              make_integer(24),
+              make_compiled_function({
+                  make(OpConstant, {0}),
+                  make(OpReturnValue, {}),
+              }),
+          },
           {
               make(OpConstant, {1}),
               make(OpCall, {}),
@@ -572,10 +659,13 @@ TEST_CASE("Function Calls", "[compiler]") {
           let noArg = fn() { 24 };
           noArg();
           )",
-          {make_integer(24), make_compiled_function({
-                                 make(OpConstant, {0}),
-                                 make(OpReturnValue, {}),
-                             })},
+          {
+              make_integer(24),
+              make_compiled_function({
+                  make(OpConstant, {0}),
+                  make(OpReturnValue, {}),
+              }),
+          },
           {
               make(OpConstant, {1}),
               make(OpSetGlobal, {0}),
@@ -589,9 +679,85 @@ TEST_CASE("Function Calls", "[compiler]") {
   run_compiler_test("([compiler]: Function Calls)", tests);
 }
 
+TEST_CASE("Let Statement Scopes", "[compiler]") {
+  vector<CompilerTestCase> tests{
+      {
+          R"(
+            let num = 55;
+            fn() { num }
+          )",
+          {
+              make_integer(55),
+              make_compiled_function({
+                  make(OpGetGlobal, {0}),
+                  make(OpReturnValue, {}),
+              }),
+          },
+          {
+              make(OpConstant, {0}),
+              make(OpSetGlobal, {0}),
+              make(OpConstant, {1}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          R"(
+            fn() {
+              let num = 55;
+              num
+            }
+          )",
+          {
+              make_integer(55),
+              make_compiled_function({
+                  make(OpConstant, {0}),
+                  make(OpSetLocal, {0}),
+                  make(OpGetLocal, {0}),
+                  make(OpReturnValue, {}),
+              }),
+          },
+          {
+              make(OpConstant, {1}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          R"(
+            fn() {
+              let a = 55;
+              let b = 77;
+              a + b
+            }
+          )",
+          {
+              make_integer(55),
+              make_integer(77),
+              make_compiled_function({
+                  make(OpConstant, {0}),
+                  make(OpSetLocal, {0}),
+                  make(OpConstant, {1}),
+                  make(OpSetLocal, {1}),
+                  make(OpGetLocal, {0}),
+                  make(OpGetLocal, {1}),
+                  make(OpAdd, {}),
+                  make(OpReturnValue, {}),
+              }),
+          },
+          {
+              make(OpConstant, {2}),
+              make(OpPop, {}),
+          },
+      },
+  };
+
+  run_compiler_test("([compiler]: Let Statement Scopes)", tests);
+}
+
 TEST_CASE("Compiler Scopes", "[compiler]") {
   Compiler compiler;
   REQUIRE(compiler.scopeIndex == 0);
+
+  auto globalSymbolTable = compiler.symbolTable;
 
   compiler.emit(OpMul, {});
 
@@ -605,8 +771,13 @@ TEST_CASE("Compiler Scopes", "[compiler]") {
   auto last = compiler.last_instruction();
   REQUIRE(last.opecode == OpSub);
 
+  REQUIRE(compiler.symbolTable->outer == globalSymbolTable);
+
   compiler.leave_scope();
   REQUIRE(compiler.scopeIndex == 0);
+
+  REQUIRE(compiler.symbolTable == globalSymbolTable);
+  REQUIRE(!compiler.symbolTable->outer);
 
   compiler.emit(OpAdd, {});
   REQUIRE(compiler.current_instructions().size() == 2);

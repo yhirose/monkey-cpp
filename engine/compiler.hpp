@@ -48,7 +48,11 @@ struct Compiler {
       compile(ast->nodes[1]);
       auto name = std::string(ast->nodes[0]->token);
       auto symbol = symbolTable->define(name);
-      emit(OpSetGlobal, {symbol.index});
+      if (symbol.scope == GlobalScope) {
+        emit(OpSetGlobal, {symbol.index});
+      } else {
+        emit(OpSetLocal, {symbol.index});
+      }
       break;
     }
     case "IDENTIFIER"_: {
@@ -57,7 +61,11 @@ struct Compiler {
       if (!symbol) {
         throw std::runtime_error(fmt::format("undefined variable {}", name));
       }
-      emit(OpGetGlobal, {symbol.value().index});
+      if (symbol.value().scope == GlobalScope) {
+        emit(OpGetGlobal, {symbol.value().index});
+      } else {
+        emit(OpGetLocal, {symbol.value().index});
+      }
       break;
     }
     case "EXPRESSION_STATEMENT"_: {
@@ -200,7 +208,9 @@ struct Compiler {
       compile(ast->nodes[1]);
       if (last_instruction_is(OpPop)) { replace_last_pop_with_return(); }
       if (!last_instruction_is(OpReturnValue)) { emit(OpReturn, {}); }
-      auto compiledFn = make_compiled_function({leave_scope()});
+      auto numLocals = symbolTable->numDefinitions;
+      auto instructions = leave_scope();
+      auto compiledFn = make_compiled_function({instructions}, numLocals);
       emit(OpConstant, {add_constant(compiledFn)});
       break;
     }
@@ -287,12 +297,14 @@ struct Compiler {
   void enter_scope() {
     scopes.push_back(CompilerScope{});
     scopeIndex++;
+    symbolTable = enclosed_symbol_table(symbolTable);
   }
 
   Instructions leave_scope() {
     auto instructions = current_instructions();
     scopes.pop_back();
     scopeIndex--;
+    symbolTable = symbolTable->outer;
     return instructions;
   }
 

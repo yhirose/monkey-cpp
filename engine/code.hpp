@@ -37,6 +37,8 @@ enum OpecodeType {
   OpCall,
   OpReturnValue,
   OpReturn,
+  OpGetLocal,
+  OpSetLocal,
 };
 
 struct Definition {
@@ -70,6 +72,8 @@ inline std::map<Opecode, Definition> &definitions() {
       {OpCall, {"OpCall", {}}},
       {OpReturnValue, {"OpReturnValue", {}}},
       {OpReturn, {"OpReturn", {}}},
+      {OpGetLocal, {"OpGetLocal", {1}}},
+      {OpSetLocal, {"OpSetLocal", {1}}},
   };
   return definitions_;
 }
@@ -99,6 +103,10 @@ inline uint16_t read_uint16(const uint8_t *p) {
   return n;
 }
 
+inline uint8_t read_uint8(const uint8_t *p) {
+  return *p;
+}
+
 inline std::vector<uint8_t> make(Opecode op, const std::vector<int> &operands) {
   auto it = definitions().find(op);
   if (it == definitions().end()) { return std::vector<uint8_t>(); }
@@ -115,6 +123,7 @@ inline std::vector<uint8_t> make(Opecode op, const std::vector<int> &operands) {
     auto width = widths[i];
     switch (width) {
     case 2: put_uint16(&instruction[offset], o); break;
+    case 1: instruction[offset] = static_cast<uint8_t>(o); break;
     }
     offset += width;
     i++;
@@ -132,6 +141,7 @@ read_operands(const Definition &def, const Instructions &ins,
   for (auto width : def.operand_widths) {
     switch (width) {
     case 2: operands[i] = read_uint16(&ins[offset]); break;
+    case 1: operands[i] = read_uint8(&ins[offset]); break;
     }
     offset += width;
   }

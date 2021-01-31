@@ -289,7 +289,57 @@ TEST_CASE("First Class Functions - vm", "[vm]") {
          returnsOneReturner()();
        )",
        make_integer(1)},
+      {R"(
+         let returnsOneReturner = fn() {
+           let retunrsOne = fn() { 1; };
+           retunrsOne;
+         };
+         returnsOneReturner()();
+       )",
+       make_integer(1)},
   };
 
   run_vm_test("([vm]: First Class Functions)", tests);
+}
+
+TEST_CASE("Calling Functions With Bindings - vm", "[vm]") {
+  vector<VmTestCase> tests{
+      {R"(
+         let one = fn() { let one = 1; one };
+         one();
+       )",
+       make_integer(1)},
+      {R"(
+         let oneAndTwo = fn() { let one = 1; let two = 2; one + two; };
+         oneAndTwo();
+       )",
+       make_integer(3)},
+      {R"(
+         let oneAndTwo = fn() { let one = 1; let two = 2; one + two; };
+         let threeAndFour = fn() { let three = 3; let four = 4; three + four; };
+         oneAndTwo() + threeAndFour();
+       )",
+       make_integer(10)},
+      {R"(
+         let firstFoobar = fn() { let foobar = 50; foobar; };
+         let secondFoobar = fn() { let foobar = 100; foobar; };
+         firstFoobar() + secondFoobar();
+       )",
+       make_integer(150)},
+      {R"(
+         let globalSeed = 50;
+         let minusOne = fn() {
+           let num = 1;
+           globalSeed - num;
+         }
+         let minusTwo = fn() {
+           let num = 2;
+           globalSeed - num;
+         }
+         minusOne() + minusTwo();
+       )",
+       make_integer(97)},
+  };
+
+  run_vm_test("([vm]: Calling Functions With Bindings)", tests);
 }

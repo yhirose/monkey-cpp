@@ -16,6 +16,7 @@ TEST_CASE("Make", "[code]") {
   Test tests[] = {
       {OpConstant, {65534}, {OpConstant, 255, 254}},
       {OpAdd, {}, {OpAdd}},
+      {OpGetLocal, {255}, {OpGetLocal, 255}},
   };
 
   for (const auto &t : tests) {
@@ -28,11 +29,12 @@ TEST_CASE("Make", "[code]") {
 TEST_CASE("Instructions string", "[code]") {
   vector<Instructions> instructions{
       make(OpAdd, {}),
+      make(OpGetLocal, {1}),
       make(OpConstant, {2}),
       make(OpConstant, {65535}),
   };
 
-  string expected = R"(0000 OpAdd\n0001 OpConstant 2\n0004 OpConstant 65535\n)";
+  string expected = R"(0000 OpAdd\n0001 OpGetLocal 1\n0003 OpConstant 2\n0006 OpConstant 65535\n)";
 
   auto concatted = concat_instructions(instructions);
 
