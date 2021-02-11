@@ -182,7 +182,7 @@ struct Evaluator {
 
   std::shared_ptr<Object>
   eval_assignment(const Ast &node, const std::shared_ptr<Environment> &env) {
-    auto ident = node.nodes[0]->token;
+    auto ident = node.nodes[0]->token_to_string();
     auto rval = eval(*node.nodes.back(), env);
     env->set(ident, rval);
     return rval;
@@ -190,16 +190,16 @@ struct Evaluator {
 
   std::shared_ptr<Object>
   eval_identifier(const Ast &node, const std::shared_ptr<Environment> &env) {
-    return env->get(node.token, [&]() {
-      throw make_error("identifier not found: " + std::string(node.token));
+    return env->get(node.token_to_string(), [&]() {
+      throw make_error("identifier not found: " + node.token_to_string());
     });
   };
 
   std::shared_ptr<Object>
   eval_function(const Ast &node, const std::shared_ptr<Environment> &env) {
-    std::vector<std::string_view> params;
+    std::vector<std::string> params;
     for (auto node : node.nodes[0]->nodes) {
-      params.push_back(node->token);
+      params.push_back(node->token_to_string());
     }
     auto body = node.nodes[1];
     return std::make_shared<Function>(params, env, body);

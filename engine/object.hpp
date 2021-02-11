@@ -103,7 +103,7 @@ struct Error : public Object {
 };
 
 struct Function : public Object {
-  Function(const std::vector<std::string_view> &params,
+  Function(const std::vector<std::string> &params,
            std::shared_ptr<Environment> env, std::shared_ptr<Ast> body)
       : params(params), env(env), body(body) {}
 
@@ -123,7 +123,7 @@ struct Function : public Object {
     return ss.str();
   }
 
-  const std::vector<std::string_view> params;
+  const std::vector<std::string> params;
   const std::shared_ptr<Environment> env;
   const std::shared_ptr<Ast> body;
 };
