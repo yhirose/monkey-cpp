@@ -66,126 +66,133 @@ struct VM {
   }
 
   void run() {
-    while (current_frame()->ip <
-           static_cast<int>(current_frame()->instructions().size()) - 1) {
-      current_frame()->ip++;
+    try {
+      while (current_frame()->ip <
+             static_cast<int>(current_frame()->instructions().size()) - 1) {
+        current_frame()->ip++;
 
-      auto ip = current_frame()->ip;
-      const auto &ins = current_frame()->instructions();
-      Opecode op = ins[ip];
+        auto ip = current_frame()->ip;
+        const auto &ins = current_frame()->instructions();
+        Opecode op = ins[ip];
 
-      switch (op) {
-      case OpConstant: {
-        auto constIndex = read_uint16(&current_frame()->instructions()[ip + 1]);
-        current_frame()->ip += 2;
-        push(constants[constIndex]);
-        break;
-      }
-      case OpAdd:
-      case OpSub:
-      case OpMul:
-      case OpDiv: execute_binary_operation(op); break;
-      case OpTrue: push(CONST_TRUE); break;
-      case OpFalse: push(CONST_FALSE); break;
-      case OpNull: push(CONST_NULL); break;
-      case OpEqual:
-      case OpNotEqual:
-      case OpGreaterThan: execute_comparison(op); break;
-      case OpBang: execute_bang_operator(); break;
-      case OpMinus: execute_minus_operator(); break;
-      case OpPop: pop(); break;
-      case OpJump: {
-        auto pos = read_uint16(&current_frame()->instructions()[ip + 1]);
-        current_frame()->ip = pos - 1;
-        break;
-      }
-      case OpJumpNotTruthy: {
-        auto pos = read_uint16(&current_frame()->instructions()[ip + 1]);
-        current_frame()->ip += 2;
-        auto condition = pop();
-        if (!is_truthy(condition)) { current_frame()->ip = pos - 1; }
-        break;
-      }
-      case OpSetGlobal: {
-        auto globalIndex =
-            read_uint16(&current_frame()->instructions()[ip + 1]);
-        current_frame()->ip += 2;
-        globals[globalIndex] = pop();
-        break;
-      }
-      case OpGetGlobal: {
-        auto globalIndex =
-            read_uint16(&current_frame()->instructions()[ip + 1]);
-        current_frame()->ip += 2;
-        push(globals[globalIndex]);
-        break;
-      }
-      case OpArray: {
-        auto numElements =
-            read_uint16(&current_frame()->instructions()[ip + 1]);
-        current_frame()->ip += 2;
+        switch (op) {
+        case OpConstant: {
+          auto constIndex =
+              read_uint16(&current_frame()->instructions()[ip + 1]);
+          current_frame()->ip += 2;
+          push(constants[constIndex]);
+          break;
+        }
+        case OpAdd:
+        case OpSub:
+        case OpMul:
+        case OpDiv: execute_binary_operation(op); break;
+        case OpTrue: push(CONST_TRUE); break;
+        case OpFalse: push(CONST_FALSE); break;
+        case OpNull: push(CONST_NULL); break;
+        case OpEqual:
+        case OpNotEqual:
+        case OpGreaterThan: execute_comparison(op); break;
+        case OpBang: execute_bang_operator(); break;
+        case OpMinus: execute_minus_operator(); break;
+        case OpPop: pop(); break;
+        case OpJump: {
+          auto pos = read_uint16(&current_frame()->instructions()[ip + 1]);
+          current_frame()->ip = pos - 1;
+          break;
+        }
+        case OpJumpNotTruthy: {
+          auto pos = read_uint16(&current_frame()->instructions()[ip + 1]);
+          current_frame()->ip += 2;
+          auto condition = pop();
+          if (!is_truthy(condition)) { current_frame()->ip = pos - 1; }
+          break;
+        }
+        case OpSetGlobal: {
+          auto globalIndex =
+              read_uint16(&current_frame()->instructions()[ip + 1]);
+          current_frame()->ip += 2;
+          globals[globalIndex] = pop();
+          break;
+        }
+        case OpGetGlobal: {
+          auto globalIndex =
+              read_uint16(&current_frame()->instructions()[ip + 1]);
+          current_frame()->ip += 2;
+          push(globals[globalIndex]);
+          break;
+        }
+        case OpArray: {
+          auto numElements =
+              read_uint16(&current_frame()->instructions()[ip + 1]);
+          current_frame()->ip += 2;
 
-        auto array = build_array(sp - numElements, sp);
-        sp = sp - numElements;
-        push(array);
-        break;
-      }
-      case OpHash: {
-        auto numElements =
-            read_uint16(&current_frame()->instructions()[ip + 1]);
-        current_frame()->ip += 2;
+          auto array = build_array(sp - numElements, sp);
+          sp = sp - numElements;
+          push(array);
+          break;
+        }
+        case OpHash: {
+          auto numElements =
+              read_uint16(&current_frame()->instructions()[ip + 1]);
+          current_frame()->ip += 2;
 
-        auto hash = build_hash(sp - numElements, sp);
-        sp = sp - numElements;
-        push(hash);
-        break;
+          auto hash = build_hash(sp - numElements, sp);
+          sp = sp - numElements;
+          push(hash);
+          break;
+        }
+        case OpIndex: {
+          auto index = pop();
+          auto left = pop();
+          execute_index_expression(left, index);
+          break;
+        }
+        case OpCall: {
+          auto numArgs = read_uint8(&current_frame()->instructions()[ip + 1]);
+          current_frame()->ip += 1;
+          call_function(numArgs);
+          break;
+        }
+        case OpReturnValue: {
+          auto returnValue = pop();
+          auto frame = pop_frame();
+          sp = frame->basePointer - 1;
+          push(returnValue);
+          break;
+        }
+        case OpReturn: {
+          auto frame = pop_frame();
+          sp = frame->basePointer - 1;
+          push(CONST_NULL);
+          break;
+        }
+        case OpSetLocal: {
+          auto localIndex =
+              read_uint8(&current_frame()->instructions()[ip + 1]);
+          current_frame()->ip += 1;
+          auto frame = current_frame();
+          stack[frame->basePointer + localIndex] = pop();
+          break;
+        }
+        case OpGetLocal: {
+          auto localIndex =
+              read_uint8(&current_frame()->instructions()[ip + 1]);
+          current_frame()->ip += 1;
+          auto frame = current_frame();
+          push(stack[frame->basePointer + localIndex]);
+          break;
+        }
+        }
       }
-      case OpIndex: {
-        auto index = pop();
-        auto left = pop();
-        execute_index_expression(left, index);
-        break;
-      }
-      case OpCall: {
-        auto fn = std::dynamic_pointer_cast<CompiledFunction>(stack[sp - 1]);
-        auto frame = std::make_shared<Frame>(fn, sp);
-        push_frame(frame);
-        sp = frame->basePointer + fn->numLocals;
-        break;
-      }
-      case OpReturnValue: {
-        auto returnValue = pop();
-        auto frame = pop_frame();
-        sp = frame->basePointer - 1;
-        push(returnValue);
-        break;
-      }
-      case OpReturn: {
-        auto frame = pop_frame();
-        sp = frame->basePointer - 1;
-        push(CONST_NULL);
-        break;
-      }
-      case OpSetLocal: {
-        auto localIndex = read_uint8(&current_frame()->instructions()[ip + 1]);
-        current_frame()->ip += 1;
-        auto frame = current_frame();
-        stack[frame->basePointer + localIndex] = pop();
-        break;
-      }
-      case OpGetLocal: {
-        auto localIndex = read_uint8(&current_frame()->instructions()[ip + 1]);
-        current_frame()->ip += 1;
-        auto frame = current_frame();
-        push(stack[frame->basePointer + localIndex]);
-        break;
-      }
-      }
+    } catch (const std::shared_ptr<Object> &err) {
+      push(err);
+      pop();
     }
   }
 
   void push(std::shared_ptr<Object> o) {
-    if (sp >= StackSize) { throw std::runtime_error("stack overflow"); }
+    if (sp >= StackSize) { throw make_error("stack overflow"); }
     stack[sp] = o;
     sp++;
   }
@@ -195,6 +202,19 @@ struct VM {
     stack.pop_back();
     sp--;
     return o;
+  }
+
+  void call_function(int numArgs) {
+    auto fn =
+        std::dynamic_pointer_cast<CompiledFunction>(stack[sp - 1 - numArgs]);
+    if (!fn) { throw make_error("calling non-function"); }
+    if (numArgs != fn->numParameters) {
+      throw make_error(fmt::format("wrong number of arguments: want={}, got={}",
+                                   fn->numParameters, numArgs));
+    }
+    auto frame = std::make_shared<Frame>(fn, sp - numArgs);
+    push_frame(frame);
+    sp = frame->basePointer + fn->numLocals;
   }
 
   void execute_binary_operation(Opecode op) {
@@ -214,7 +234,7 @@ struct VM {
       return;
     }
 
-    throw std::runtime_error(
+    throw make_error(
         fmt::format("unsupported types for binary operation: {} {}", left_type,
                     right_type));
   }
@@ -232,8 +252,7 @@ struct VM {
     case OpSub: result = left_value - right_value; break;
     case OpMul: result = left_value * right_value; break;
     case OpDiv: result = left_value / right_value; break;
-    default:
-      throw std::runtime_error(fmt::format("unknown integer operator: {}", op));
+    default: throw make_error(fmt::format("unknown integer operator: {}", op));
     }
 
     push(make_integer(result));
@@ -245,7 +264,7 @@ struct VM {
     auto right_value = cast<String>(right).value;
 
     if (op != OpAdd) {
-      throw std::runtime_error(fmt::format("unknown integer operator: {}", op));
+      throw make_error(fmt::format("unknown integer operator: {}", op));
     }
 
     push(make_string(left_value + right_value));
@@ -270,8 +289,8 @@ struct VM {
     case OpEqual: push(make_bool(right_value == left_value)); break;
     case OpNotEqual: push(make_bool(right_value != left_value)); break;
     default:
-      throw std::runtime_error(fmt::format("unknown operator: {} ({} {})", op,
-                                           left_type, right_type));
+      throw make_error(fmt::format("unknown operator: {} ({} {})", op,
+                                   left_type, right_type));
     }
   }
 
@@ -284,7 +303,7 @@ struct VM {
     case OpEqual: push(make_bool(right_value == left_value)); break;
     case OpNotEqual: push(make_bool(right_value != left_value)); break;
     case OpGreaterThan: push(make_bool(left_value > right_value)); break;
-    default: throw std::runtime_error(fmt::format("unknown operator: {}", op));
+    default: make_error(fmt::format("unknown operator: {}", op));
     }
   }
 
@@ -303,7 +322,7 @@ struct VM {
   void execute_minus_operator() {
     auto operand = pop();
     if (operand->type() != INTEGER_OBJ) {
-      throw std::runtime_error(
+      throw make_error(
           fmt::format("unsupported types for negation: {}", operand->type()));
     }
 
@@ -318,7 +337,7 @@ struct VM {
     } else if (left->type() == HASH_OBJ) {
       return execute_hash_index(left, index);
     } else {
-      throw std::runtime_error(
+      throw make_error(
           fmt::format("index operator not supported: {}", left->type()));
     }
   }

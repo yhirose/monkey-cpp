@@ -650,7 +650,7 @@ TEST_CASE("Function Calls", "[compiler]") {
           },
           {
               make(OpConstant, {1}),
-              make(OpCall, {}),
+              make(OpCall, {0}),
               make(OpPop, {}),
           },
       },
@@ -670,7 +670,57 @@ TEST_CASE("Function Calls", "[compiler]") {
               make(OpConstant, {1}),
               make(OpSetGlobal, {0}),
               make(OpGetGlobal, {0}),
-              make(OpCall, {}),
+              make(OpCall, {0}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          R"(
+          let oneArg = fn(a) { a };
+          oneArg(24);
+          )",
+          {
+              make_compiled_function({
+                  make(OpGetLocal, {0}),
+                  make(OpReturnValue, {}),
+              }),
+              make_integer(24),
+          },
+          {
+              make(OpConstant, {0}),
+              make(OpSetGlobal, {0}),
+              make(OpGetGlobal, {0}),
+              make(OpConstant, {1}),
+              make(OpCall, {1}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          R"(
+          let manyArg = fn(a, b, c) { a; b; c };
+          manyArg(24, 25, 26);
+          )",
+          {
+              make_compiled_function({
+                  make(OpGetLocal, {0}),
+                  make(OpPop, {}),
+                  make(OpGetLocal, {1}),
+                  make(OpPop, {}),
+                  make(OpGetLocal, {2}),
+                  make(OpReturnValue, {}),
+              }),
+              make_integer(24),
+              make_integer(25),
+              make_integer(26),
+          },
+          {
+              make(OpConstant, {0}),
+              make(OpSetGlobal, {0}),
+              make(OpGetGlobal, {0}),
+              make(OpConstant, {1}),
+              make(OpConstant, {2}),
+              make(OpConstant, {3}),
+              make(OpCall, {3}),
               make(OpPop, {}),
           },
       },

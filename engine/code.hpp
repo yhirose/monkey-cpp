@@ -69,7 +69,7 @@ inline std::map<Opecode, Definition> &definitions() {
       {OpArray, {"OpArray", {2}}},
       {OpHash, {"OpHash", {2}}},
       {OpIndex, {"OpIndex", {}}},
-      {OpCall, {"OpCall", {}}},
+      {OpCall, {"OpCall", {1}}},
       {OpReturnValue, {"OpReturnValue", {}}},
       {OpReturn, {"OpReturn", {}}},
       {OpGetLocal, {"OpGetLocal", {1}}},

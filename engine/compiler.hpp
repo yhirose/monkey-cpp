@@ -196,7 +196,11 @@ struct Compiler {
           break;
         }
         case "ARGUMENTS"_: {
-          emit(OpCall, {});
+          auto arguments = ast->nodes[1];
+          for (auto node : arguments->nodes) {
+            compile(node);
+          }
+          emit(OpCall, {static_cast<int>(arguments->nodes.size())});
           break;
         };
         }
@@ -205,12 +209,17 @@ struct Compiler {
     }
     case "FUNCTION"_: {
       enter_scope();
+      auto parameters = ast->nodes[0];
+      for (auto node : parameters->nodes) {
+        auto name = std::string(node->token);
+        auto symbol = symbolTable->define(name);
+      }
       compile(ast->nodes[1]);
       if (last_instruction_is(OpPop)) { replace_last_pop_with_return(); }
       if (!last_instruction_is(OpReturnValue)) { emit(OpReturn, {}); }
       auto numLocals = symbolTable->numDefinitions;
       auto instructions = leave_scope();
-      auto compiledFn = make_compiled_function({instructions}, numLocals);
+      auto compiledFn = make_compiled_function({instructions}, numLocals, parameters->nodes.size());
       emit(OpConstant, {add_constant(compiledFn)});
       break;
     }

@@ -59,6 +59,17 @@ inline void test_string_object(const std::string &expected,
   CHECK(val == expected);
 }
 
+inline void test_error_object(const std::string &expected,
+                              std::shared_ptr<monkey::Object> actual) {
+  using namespace monkey;
+
+  REQUIRE(actual);
+  REQUIRE(actual->type() == ERROR_OBJ);
+
+  auto msg = cast<Error>(actual).message;
+  CHECK(msg == expected);
+}
+
 inline monkey::Instructions
 concat_instructions(const std::vector<monkey::Instructions> &s) {
   monkey::Instructions out;

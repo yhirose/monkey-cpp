@@ -30,6 +30,9 @@ void test_expected_object(shared_ptr<Object> expected,
     }
     break;
   }
+  case ERROR_OBJ:
+    test_error_object(cast<Error>(expected).message, actual);
+    break;
   default: break;
   }
 }
@@ -342,4 +345,79 @@ TEST_CASE("Calling Functions With Bindings - vm", "[vm]") {
   };
 
   run_vm_test("([vm]: Calling Functions With Bindings)", tests);
+}
+
+TEST_CASE("Calling Functions With Arguments And Bindings - vm", "[vm]") {
+  vector<VmTestCase> tests{
+      {R"(
+         let identity = fn(a) { a; }
+         identity(4);
+       )",
+       make_integer(4)},
+      {R"(
+         let sum = fn(a, b) { a + b; }
+         sum(1, 2);
+       )",
+       make_integer(3)},
+      {R"(
+         let sum = fn(a, b) {
+           let c = a + b;
+           c;
+         }
+         sum(1, 2);
+       )",
+       make_integer(3)},
+      {R"(
+         let sum = fn(a, b) {
+           let c = a + b;
+           c;
+         }
+         sum(1, 2) + sum(3, 4);
+       )",
+       make_integer(10)},
+      {R"(
+         let sum = fn(a, b) {
+           let c = a + b;
+           c;
+         }
+         let outer = fn() {
+           sum(1, 2) + sum(3, 4);
+         }
+         outer();
+       )",
+       make_integer(10)},
+      {R"(
+         let globalNum = 10;
+         let sum = fn(a, b) {
+           let c = a + b;
+           c + globalNum;
+         }
+         let outer = fn() {
+           sum(1, 2) + sum(3, 4) + globalNum;
+         }
+         outer() + globalNum;
+       )",
+       make_integer(50)},
+  };
+
+  run_vm_test("([vm]: Calling Functions With Arguments And Bindings)", tests);
+}
+
+TEST_CASE("Calling Functions With Wrong Arguments - vm", "[vm]") {
+  vector<VmTestCase> tests{
+      {R"(
+         fn() { 1; }(1);
+       )",
+       make_error("wrong number of arguments: want=0, got=1")},
+      {R"(
+         fn(a) { a; }();
+       )",
+       make_error("wrong number of arguments: want=1, got=0")},
+      {R"(
+         fn(a, b) { a + b; }(1);
+       )",
+       make_error("wrong number of arguments: want=2, got=1")},
+  };
+
+  run_vm_test("([vm]: Calling Functions With Wrong Arguments)", tests);
 }
