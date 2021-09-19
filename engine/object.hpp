@@ -19,7 +19,8 @@ enum ObjectType {
   STRING_OBJ,
   BUILTIN_OBJ,
   ARRAY_OBJ,
-  HASH_OBJ
+  HASH_OBJ,
+  CLOSURE_OBJ
 };
 
 struct HashKey {
@@ -229,6 +230,21 @@ struct Hash : public Object {
   }
 
   std::map<HashKey, HashPair> pairs;
+};
+
+struct Closure : public Object {
+  Closure(std::shared_ptr<CompiledFunction> fn) : fn(fn) {}
+
+  ObjectType type() const override { return CLOSURE_OBJ; }
+  std::string name() const override { return "CLOSURE"; }
+
+  std::string inspect() const override {
+    std::stringstream ss;
+    ss << "Closure[" << std::hex << this << std::dec << "]";
+    return ss.str();
+  }
+
+  std::shared_ptr<CompiledFunction> fn;
 };
 
 inline std::shared_ptr<Object> make_integer(int64_t n) {

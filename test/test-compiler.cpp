@@ -575,7 +575,7 @@ TEST_CASE("Functions", "[compiler]") {
               }),
           },
           {
-              make(OpConstant, {2}),
+              make(OpClosure, {2, 0}),
               make(OpPop, {}),
           },
       },
@@ -592,7 +592,7 @@ TEST_CASE("Functions", "[compiler]") {
               }),
           },
           {
-              make(OpConstant, {2}),
+              make(OpClosure, {2, 0}),
               make(OpPop, {}),
           },
       },
@@ -609,7 +609,7 @@ TEST_CASE("Functions", "[compiler]") {
               }),
           },
           {
-              make(OpConstant, {2}),
+              make(OpClosure, {2, 0}),
               make(OpPop, {}),
           },
       },
@@ -628,7 +628,7 @@ TEST_CASE("Functions Without Return Value", "[compiler]") {
               }),
           },
           {
-              make(OpConstant, {0}),
+              make(OpClosure, {0, 0}),
               make(OpPop, {}),
           },
       },
@@ -649,7 +649,7 @@ TEST_CASE("Function Calls", "[compiler]") {
               }),
           },
           {
-              make(OpConstant, {1}),
+              make(OpClosure, {1, 0}),
               make(OpCall, {0}),
               make(OpPop, {}),
           },
@@ -667,7 +667,7 @@ TEST_CASE("Function Calls", "[compiler]") {
               }),
           },
           {
-              make(OpConstant, {1}),
+              make(OpClosure, {1, 0}),
               make(OpSetGlobal, {0}),
               make(OpGetGlobal, {0}),
               make(OpCall, {0}),
@@ -687,7 +687,7 @@ TEST_CASE("Function Calls", "[compiler]") {
               make_integer(24),
           },
           {
-              make(OpConstant, {0}),
+              make(OpClosure, {0, 0}),
               make(OpSetGlobal, {0}),
               make(OpGetGlobal, {0}),
               make(OpConstant, {1}),
@@ -714,7 +714,7 @@ TEST_CASE("Function Calls", "[compiler]") {
               make_integer(26),
           },
           {
-              make(OpConstant, {0}),
+              make(OpClosure, {0, 0}),
               make(OpSetGlobal, {0}),
               make(OpGetGlobal, {0}),
               make(OpConstant, {1}),
@@ -746,7 +746,7 @@ TEST_CASE("Let Statement Scopes", "[compiler]") {
           {
               make(OpConstant, {0}),
               make(OpSetGlobal, {0}),
-              make(OpConstant, {1}),
+              make(OpClosure, {1, 0}),
               make(OpPop, {}),
           },
       },
@@ -767,7 +767,7 @@ TEST_CASE("Let Statement Scopes", "[compiler]") {
               }),
           },
           {
-              make(OpConstant, {1}),
+              make(OpClosure, {1, 0}),
               make(OpPop, {}),
           },
       },
@@ -794,7 +794,7 @@ TEST_CASE("Let Statement Scopes", "[compiler]") {
               }),
           },
           {
-              make(OpConstant, {2}),
+              make(OpClosure, {2, 0}),
               make(OpPop, {}),
           },
       },
@@ -874,7 +874,7 @@ TEST_CASE("Builtins", "[compiler]") {
               }),
           },
           {
-              make(OpConstant, {0}),
+              make(OpClosure, {0, 0}),
               make(OpPop, {}),
           },
       },

@@ -40,6 +40,7 @@ enum OpecodeType {
   OpGetLocal,
   OpSetLocal,
   OpGetBuiltin,
+  OpClosure,
 };
 
 struct Definition {
@@ -76,6 +77,7 @@ inline std::map<Opecode, Definition> &definitions() {
       {OpGetLocal, {"OpGetLocal", {1}}},
       {OpSetLocal, {"OpSetLocal", {1}}},
       {OpGetBuiltin, {"OpGetBuiltin", {1}}},
+      {OpClosure, {"OpClosure", {2, 1}}},
   };
   return definitions_;
 }
@@ -146,6 +148,7 @@ read_operands(const Definition &def, const Instructions &ins,
     case 1: operands[i] = read_uint8(&ins[offset]); break;
     }
     offset += width;
+    i++;
   }
   return std::pair(operands, offset - start_offset);
 }
@@ -161,6 +164,7 @@ inline std::string fmt_instruction(const Definition &def,
   switch (operand_count) {
   case 0: return def.name;
   case 1: return fmt::format("{} {}", def.name, operands[0]);
+  case 2: return fmt::format("{} {} {}", def.name, operands[0], operands[1]);
   }
 
   return fmt::format("ERROR: unhandled operand count for {}\n", def.name);

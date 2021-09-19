@@ -38,8 +38,7 @@ struct Compiler {
 
   Compiler(std::shared_ptr<SymbolTable> symbolTable,
            const std::vector<std::shared_ptr<Object>> &constants)
-      : symbolTable(symbolTable), constants(constants) {
-  };
+      : symbolTable(symbolTable), constants(constants){};
 
   void compile(const std::shared_ptr<Ast> &ast) {
     using namespace peg::udl;
@@ -224,7 +223,8 @@ struct Compiler {
       auto instructions = leave_scope();
       auto compiledFn = make_compiled_function({instructions}, numLocals,
                                                parameters->nodes.size());
-      emit(OpConstant, {add_constant(compiledFn)});
+      auto fnIndex = add_constant(compiledFn);
+      emit(OpClosure, {fnIndex, 0});
       break;
     }
     case "RETURN"_: {

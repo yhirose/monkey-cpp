@@ -5,14 +5,14 @@
 namespace monkey {
 
 struct Frame {
-  std::shared_ptr<CompiledFunction> fn;
+  std::shared_ptr<Closure> cl;
   int ip = -1;
   int basePointer = -1;
 
-  Frame(std::shared_ptr<CompiledFunction> fn, int basePointer)
-      : fn(fn), basePointer(basePointer) {}
+  Frame(std::shared_ptr<Closure> cl, int basePointer)
+      : cl(cl), basePointer(basePointer) {}
 
-  const Instructions &instructions() const { return fn->instructions; }
+  const Instructions &instructions() const { return cl->fn->instructions; }
 };
 
 struct VM {
@@ -33,15 +33,17 @@ struct VM {
   VM(const Bytecode &bytecode)
       : constants(bytecode.constants), stack(StackSize), globals(GlobalSize),
         frames(MaxFrames) {
-    auto fn = std::make_shared<CompiledFunction>(bytecode.instructions);
-    frames[0] = std::make_shared<Frame>(fn, 0);
+    auto mainFn = std::make_shared<CompiledFunction>(bytecode.instructions);
+    auto mainClosure = std::make_shared<Closure>(mainFn);
+    frames[0] = std::make_shared<Frame>(mainClosure, 0);
   }
 
   VM(const Bytecode &bytecode, const std::vector<std::shared_ptr<Object>> &s)
       : constants(bytecode.constants), stack(StackSize), globals(s),
         frames(MaxFrames) {
-    auto fn = std::make_shared<CompiledFunction>(bytecode.instructions);
-    frames[0] = std::make_shared<Frame>(fn, 0);
+    auto mainFn = std::make_shared<CompiledFunction>(bytecode.instructions);
+    auto mainClosure = std::make_shared<Closure>(mainFn);
+    frames[0] = std::make_shared<Frame>(mainClosure, 0);
   }
 
   std::shared_ptr<Object> stack_top() const {
@@ -190,6 +192,12 @@ struct VM {
           push(definition.second);
           break;
         }
+        case OpClosure: {
+          auto constIndex = read_uint16(&current_frame()->instructions()[ip + 1]);
+          auto _ = read_uint8(&current_frame()->instructions()[ip + 3]);
+          current_frame()->ip += 3;
+          push_closure(constIndex);
+        }
         }
       }
     } catch (const std::shared_ptr<Object> &err) {
@@ -204,6 +212,16 @@ struct VM {
     sp++;
   }
 
+  void push_closure(int constIndex) {
+    auto constant = constants[constIndex];
+    auto function = std::dynamic_pointer_cast<CompiledFunction>(constant);
+    if (!function) {
+      throw make_error(fmt::format("not a function: {}", constIndex));
+    }
+    auto closure = std::make_shared<Closure>(function);
+    push(closure);
+  }
+
   std::shared_ptr<Object> pop() {
     auto o = stack[sp - 1];
     stack.pop_back();
@@ -211,14 +229,14 @@ struct VM {
     return o;
   }
 
-  void call_function(std::shared_ptr<CompiledFunction> fn, int numArgs) {
-    if (numArgs != fn->numParameters) {
+  void call_closure(std::shared_ptr<Closure> cl, int numArgs) {
+    if (numArgs != cl->fn->numParameters) {
       throw make_error(fmt::format("wrong number of arguments: want={}, got={}",
-                                   fn->numParameters, numArgs));
+                                   cl->fn->numParameters, numArgs));
     }
-    auto frame = std::make_shared<Frame>(fn, sp - numArgs);
+    auto frame = std::make_shared<Frame>(cl, sp - numArgs);
     push_frame(frame);
-    sp = frame->basePointer + fn->numLocals;
+    sp = frame->basePointer + cl->fn->numLocals;
   }
 
   void call_builtin(std::shared_ptr<Builtin> builtin, int numArgs) {
@@ -382,8 +400,8 @@ struct VM {
 
   void execute_call(int numArgs) {
     auto callee = stack[sp - 1 - numArgs];
-    if (callee->type() == COMPILED_FUNCTION_OBJ) {
-      call_function(std::dynamic_pointer_cast<CompiledFunction>(callee), numArgs);
+    if (callee->type() == CLOSURE_OBJ) {
+      call_closure(std::dynamic_pointer_cast<Closure>(callee), numArgs);
     } else if (callee->type() == BUILTIN_OBJ) {
       call_builtin(std::dynamic_pointer_cast<Builtin>(callee), numArgs);
     } else {
