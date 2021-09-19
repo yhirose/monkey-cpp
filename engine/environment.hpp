@@ -32,12 +32,12 @@ struct Environment {
 };
 
 inline void setup_built_in_functions(Environment &env) {
-  env.set("len", BUILTINS.at("len"));
-  env.set("puts", BUILTINS.at("puts"));
-  env.set("first", BUILTINS.at("first"));
-  env.set("last", BUILTINS.at("last"));
-  env.set("rest", BUILTINS.at("rest"));
-  env.set("push", BUILTINS.at("push"));
+  env.set("len", builtins.at("len"));
+  env.set("puts", builtins.at("puts"));
+  env.set("first", builtins.at("first"));
+  env.set("last", builtins.at("last"));
+  env.set("rest", builtins.at("rest"));
+  env.set("push", builtins.at("push"));
 }
 
 inline std::shared_ptr<Environment> environment() {

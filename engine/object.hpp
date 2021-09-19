@@ -268,9 +268,9 @@ make_compiled_function(std::vector<Instructions> items, int numLocals = 0,
   return fn;
 }
 
-const std::shared_ptr<Object> CONST_TRUE = std::make_shared<Boolean>(true);
-const std::shared_ptr<Object> CONST_FALSE = std::make_shared<Boolean>(false);
-const std::shared_ptr<Object> CONST_NULL = std::make_shared<Null>();
+inline const std::shared_ptr<Object> CONST_TRUE = std::make_shared<Boolean>(true);
+inline const std::shared_ptr<Object> CONST_FALSE = std::make_shared<Boolean>(false);
+inline const std::shared_ptr<Object> CONST_NULL = std::make_shared<Null>();
 
 inline std::shared_ptr<Object> make_bool(bool value) {
   return value ? CONST_TRUE : CONST_FALSE;
@@ -293,7 +293,7 @@ validate_args_for_array(const std::vector<std::shared_ptr<Object>> &args,
   }
 }
 
-const std::map<std::string, std::shared_ptr<Object>> BUILTINS{
+const std::vector<std::pair<std::string, std::shared_ptr<Object>>> BUILTINS{
     {
         "len",
         make_builtin([](const std::vector<std::shared_ptr<Object>> &args) {
@@ -374,6 +374,23 @@ const std::map<std::string, std::shared_ptr<Object>> BUILTINS{
           return arr;
         }),
     },
+};
+
+inline std::shared_ptr<Object> get_builtin_by_name(const std::string &name) {
+  auto it = std::find_if(BUILTINS.begin(), BUILTINS.end(), [&](const auto& v) {
+    return v.first == name;
+  });
+  assert(it != BUILTINS.end());
+  return it->second;
+}
+
+const std::map<std::string, std::shared_ptr<Object>> builtins{
+  {"len", get_builtin_by_name("len")},
+  {"puts", get_builtin_by_name("puts")},
+  {"first", get_builtin_by_name("first")},
+  {"last", get_builtin_by_name("last")},
+  {"rest", get_builtin_by_name("rest")},
+  {"push", get_builtin_by_name("push")},
 };
 
 } // namespace monkey

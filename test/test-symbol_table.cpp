@@ -120,3 +120,33 @@ TEST_CASE("Resolve Nested Local", "[symbol table]") {
     }
   }
 }
+
+TEST_CASE("Define Resolve Builtins", "[symbol table]") {
+  auto global = symbol_table();
+  auto firstLocal = enclosed_symbol_table(global);
+  auto secondLocal = enclosed_symbol_table(firstLocal);
+
+  vector<Symbol> expected = {
+      {"a", BuiltinScope, 0},
+      {"c", BuiltinScope, 1},
+      {"e", BuiltinScope, 2},
+      {"f", BuiltinScope, 3},
+  };
+
+  size_t i = 0;
+  for (const auto &v : expected) {
+    global->define_builtin(i, v.name);
+    i++;
+  }
+
+  auto tables = std::vector<std::shared_ptr<SymbolTable>>{global, firstLocal,
+                                                          secondLocal};
+
+  for (auto table: tables) {
+    for (const auto &sym : expected) {
+      auto result = table->resolve(sym.name);
+      CHECK(result.has_value());
+      CHECK(result.value() == sym);
+    }
+  }
+}

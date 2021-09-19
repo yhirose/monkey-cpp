@@ -39,6 +39,7 @@ enum OpecodeType {
   OpReturn,
   OpGetLocal,
   OpSetLocal,
+  OpGetBuiltin,
 };
 
 struct Definition {
@@ -74,6 +75,7 @@ inline std::map<Opecode, Definition> &definitions() {
       {OpReturn, {"OpReturn", {}}},
       {OpGetLocal, {"OpGetLocal", {1}}},
       {OpSetLocal, {"OpSetLocal", {1}}},
+      {OpGetBuiltin, {"OpGetBuiltin", {1}}},
   };
   return definitions_;
 }

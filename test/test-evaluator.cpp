@@ -42,7 +42,8 @@ void testObject(shared_ptr<Object> evaluated,
   } else if (evaluated->type() == ERROR_OBJ) {
     CHECK(cast<Error>(evaluated).message == cast<Error>(expected).message);
   } else if (evaluated->type() == NULL_OBJ) {
-    CHECK(&cast<Null>(evaluated) == &cast<Null>(expected));
+    testNullObject(expected);
+    testNullObject(evaluated);
   }
 }
 

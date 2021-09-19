@@ -838,3 +838,47 @@ TEST_CASE("Compiler Scopes", "[compiler]") {
   auto previous = compiler.previous_instruction();
   REQUIRE(previous.opecode == OpMul);
 }
+
+TEST_CASE("Builtins", "[compiler]") {
+  vector<CompilerTestCase> tests{
+      {
+          R"(
+            len([]);
+            push([], 1);
+          )",
+          {
+              make_integer(1),
+          },
+          {
+              make(OpGetBuiltin, {0}),
+              make(OpArray, {0}),
+              make(OpCall, {1}),
+              make(OpPop, {}),
+              make(OpGetBuiltin, {5}),
+              make(OpArray, {0}),
+              make(OpConstant, {0}),
+              make(OpCall, {2}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          R"(
+            fn() { len([]); }
+          )",
+          {
+              make_compiled_function({
+                  make(OpGetBuiltin, {0}),
+                  make(OpArray, {0}),
+                  make(OpCall, {1}),
+                  make(OpReturnValue, {}),
+              }),
+          },
+          {
+              make(OpConstant, {0}),
+              make(OpPop, {}),
+          },
+      },
+  };
+
+  run_compiler_test("([compiler]: Builtins)", tests);
+}

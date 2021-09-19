@@ -8,6 +8,7 @@ using SymbolScope = std::string;
 
 const SymbolScope GlobalScope = "GLOBAL";
 const SymbolScope LocalScope = "LOCAL";
+const SymbolScope BuiltinScope = "BUILTIN";
 
 struct Symbol {
   std::string name;
@@ -32,6 +33,15 @@ struct SymbolTable {
                             numDefinitions,
                         });
     numDefinitions++;
+    return store[name];
+  }
+
+  const Symbol &define_builtin(int index, const std::string &name) {
+    store.emplace(name, Symbol{
+                            name,
+                            BuiltinScope,
+                            index,
+                        });
     return store[name];
   }
 

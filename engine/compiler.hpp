@@ -28,11 +28,23 @@ struct Compiler {
   std::vector<CompilerScope> scopes{CompilerScope{}};
   int scopeIndex = 0;
 
-  Compiler() : symbolTable(symbol_table()){};
+  Compiler() : symbolTable(symbol_table()) {
+    int i = 0;
+    for (const auto &[name, _] : BUILTINS) {
+      symbolTable->define_builtin(i, name);
+      i++;
+    }
+  };
 
   Compiler(std::shared_ptr<SymbolTable> symbolTable,
            const std::vector<std::shared_ptr<Object>> &constants)
-      : symbolTable(symbolTable), constants(constants){};
+      : symbolTable(symbolTable), constants(constants) {
+    int i = 0;
+    for (const auto &[name, _] : BUILTINS) {
+      symbolTable->define_builtin(i, name);
+      i++;
+    }
+  };
 
   void compile(const std::shared_ptr<Ast> &ast) {
     using namespace peg::udl;
@@ -61,11 +73,7 @@ struct Compiler {
       if (!symbol) {
         throw std::runtime_error(fmt::format("undefined variable {}", name));
       }
-      if (symbol.value().scope == GlobalScope) {
-        emit(OpGetGlobal, {symbol.value().index});
-      } else {
-        emit(OpGetLocal, {symbol.value().index});
-      }
+      load_symbol(*symbol);
       break;
     }
     case "EXPRESSION_STATEMENT"_: {
@@ -219,7 +227,8 @@ struct Compiler {
       if (!last_instruction_is(OpReturnValue)) { emit(OpReturn, {}); }
       auto numLocals = symbolTable->numDefinitions;
       auto instructions = leave_scope();
-      auto compiledFn = make_compiled_function({instructions}, numLocals, parameters->nodes.size());
+      auto compiledFn = make_compiled_function({instructions}, numLocals,
+                                               parameters->nodes.size());
       emit(OpConstant, {add_constant(compiledFn)});
       break;
     }
@@ -326,6 +335,16 @@ struct Compiler {
     auto lastPos = last_instruction().position;
     replace_instruction(lastPos, make(OpReturnValue, {}));
     last_instruction().opecode = OpReturnValue;
+  }
+
+  void load_symbol(const Symbol &s) {
+    if (s.scope == GlobalScope) {
+      emit(OpGetGlobal, {s.index});
+    } else if (s.scope == LocalScope) {
+      emit(OpGetLocal, {s.index});
+    } else if (s.scope == BuiltinScope) {
+      emit(OpGetBuiltin, {s.index});
+    }
   }
 };
 
