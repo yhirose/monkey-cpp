@@ -18,6 +18,14 @@ inline int repl(std::shared_ptr<monkey::Environment> env,
   std::vector<std::shared_ptr<Object>> globals(VM::GlobalSize);
   std::shared_ptr<SymbolTable> symbolTable = symbol_table();
 
+  {
+    int i = 0;
+    for (const auto &[name, _] : BUILTINS) {
+      symbolTable->define_builtin(i, name);
+      i++;
+    }
+  }
+
   for (;;) {
     auto line = linenoise::Readline(">> ");
 

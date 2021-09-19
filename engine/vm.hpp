@@ -151,7 +151,7 @@ struct VM {
         case OpCall: {
           auto numArgs = read_uint8(&current_frame()->instructions()[ip + 1]);
           current_frame()->ip += 1;
-          call_function(numArgs);
+          execute_call(numArgs);
           break;
         }
         case OpReturnValue: {
@@ -183,6 +183,13 @@ struct VM {
           push(stack[frame->basePointer + localIndex]);
           break;
         }
+        case OpGetBuiltin: {
+          auto builtinIndex = read_uint8(&current_frame()->instructions()[ip + 1]);
+          current_frame()->ip += 1;
+          auto definition = BUILTINS[builtinIndex];
+          push(definition.second);
+          break;
+        }
         }
       }
     } catch (const std::shared_ptr<Object> &err) {
@@ -204,10 +211,7 @@ struct VM {
     return o;
   }
 
-  void call_function(int numArgs) {
-    auto fn =
-        std::dynamic_pointer_cast<CompiledFunction>(stack[sp - 1 - numArgs]);
-    if (!fn) { throw make_error("calling non-function"); }
+  void call_function(std::shared_ptr<CompiledFunction> fn, int numArgs) {
     if (numArgs != fn->numParameters) {
       throw make_error(fmt::format("wrong number of arguments: want={}, got={}",
                                    fn->numParameters, numArgs));
@@ -215,6 +219,16 @@ struct VM {
     auto frame = std::make_shared<Frame>(fn, sp - numArgs);
     push_frame(frame);
     sp = frame->basePointer + fn->numLocals;
+  }
+
+  void call_builtin(std::shared_ptr<Builtin> builtin, int numArgs) {
+    std::vector<std::shared_ptr<Object>> args;
+    for (int i = 0; i < numArgs; i++) {
+      args.push_back(stack[sp - (numArgs - i)]);
+    }
+    auto result = builtin->fn(args);
+    sp = sp - numArgs;
+    push(result);
   }
 
   void execute_binary_operation(Opecode op) {
@@ -364,6 +378,17 @@ struct VM {
       return;
     }
     push(it->second.value);
+  }
+
+  void execute_call(int numArgs) {
+    auto callee = stack[sp - 1 - numArgs];
+    if (callee->type() == COMPILED_FUNCTION_OBJ) {
+      call_function(std::dynamic_pointer_cast<CompiledFunction>(callee), numArgs);
+    } else if (callee->type() == BUILTIN_OBJ) {
+      call_builtin(std::dynamic_pointer_cast<Builtin>(callee), numArgs);
+    } else {
+      throw make_error("calling non-function and non-built-in");
+    }
   }
 
   bool is_truthy(std::shared_ptr<Object> obj) const {

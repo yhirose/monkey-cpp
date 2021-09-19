@@ -39,11 +39,6 @@ struct Compiler {
   Compiler(std::shared_ptr<SymbolTable> symbolTable,
            const std::vector<std::shared_ptr<Object>> &constants)
       : symbolTable(symbolTable), constants(constants) {
-    int i = 0;
-    for (const auto &[name, _] : BUILTINS) {
-      symbolTable->define_builtin(i, name);
-      i++;
-    }
   };
 
   void compile(const std::shared_ptr<Ast> &ast) {

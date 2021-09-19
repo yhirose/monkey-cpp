@@ -421,3 +421,32 @@ TEST_CASE("Calling Functions With Wrong Arguments - vm", "[vm]") {
 
   run_vm_test("([vm]: Calling Functions With Wrong Arguments)", tests);
 }
+
+TEST_CASE("Builtin Functions - vm", "[vm]") {
+  vector<VmTestCase> tests{
+      {R"(len(""))", make_integer(0)},
+      {R"(len("four"))", make_integer(4)},
+      {R"(len("hello world"))", make_integer(11)},
+      {R"(len(1))", make_error("argument to `len` not supported, got INTEGER")},
+      {R"(len("one", "two"))",
+       make_error("wrong number of arguments. got=2, want=1")},
+      {R"(len([1, 2, 3]))", make_integer(3)},
+      {R"(len([]))", make_integer(0)},
+      {R"(puts("hello", "world!"))", CONST_NULL},
+      {R"(first([1, 2, 3]))", make_integer(1)},
+      {R"(first([]))", CONST_NULL},
+      {R"(first(1))",
+       make_error("argument to `first` must be ARRAY, got INTEGER")},
+      {R"(last([1, 2, 3]))", make_integer(3)},
+      {R"(last([]))", CONST_NULL},
+      {R"(last(1))",
+       make_error("argument to `last` must be ARRAY, got INTEGER")},
+      {R"(rest([1, 2, 3]))", make_array({2, 3})},
+      {R"(rest([]))", CONST_NULL},
+      {R"(push([], 1))", make_array({1})},
+      {R"(push(1, 1))",
+       make_error("argument to `push` must be ARRAY, got INTEGER")},
+  };
+
+  run_vm_test("([vm]: Builtin Functions)", tests);
+}

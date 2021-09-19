@@ -362,12 +362,12 @@ TEST_CASE("String literal", "[evaluator]") {
   testStringObject(testEval(input), "Hello World!");
 }
 
-TEST_CASE("Test string concatenation", "[evaluator]") {
+TEST_CASE("String concatenation", "[evaluator]") {
   auto input = R"("Hello" + " " + "World!")";
   testStringObject(testEval(input), "Hello World!");
 }
 
-TEST_CASE("Test builtin functions", "[evaluator]") {
+TEST_CASE("Builtin functions", "[evaluator]") {
   struct Test {
     string input;
     shared_ptr<Object> expected;
@@ -403,7 +403,7 @@ TEST_CASE("Test builtin functions", "[evaluator]") {
   }
 }
 
-TEST_CASE("Test array literals", "[evaluator]") {
+TEST_CASE("Array literals", "[evaluator]") {
   auto input = "[1, 2 * 2, 3 + 3]";
   auto val = testEval(input);
   REQUIRE(val->type() == ARRAY_OBJ);
@@ -416,7 +416,7 @@ TEST_CASE("Test array literals", "[evaluator]") {
   testIntegerObject(arr.elements[2], 6);
 }
 
-TEST_CASE("Test array index expressions", "[evaluator]") {
+TEST_CASE("Array index expressions", "[evaluator]") {
   struct Test {
     string input;
     shared_ptr<Object> expected;
@@ -442,7 +442,7 @@ TEST_CASE("Test array index expressions", "[evaluator]") {
   }
 }
 
-TEST_CASE("Test hash literals", "[evaluator]") {
+TEST_CASE("Hash literals", "[evaluator]") {
   auto input = R"(let two = "two";
 	{
 		"one": 10 - 9,
@@ -473,7 +473,7 @@ TEST_CASE("Test hash literals", "[evaluator]") {
   }
 }
 
-TEST_CASE("Test hash index expressions", "[evaluator]") {
+TEST_CASE("Hash index expressions", "[evaluator]") {
   struct Test {
     string input;
     shared_ptr<Object> expected;
