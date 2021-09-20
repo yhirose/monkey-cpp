@@ -194,9 +194,17 @@ struct VM {
         }
         case OpClosure: {
           auto constIndex = read_uint16(&current_frame()->instructions()[ip + 1]);
-          auto _ = read_uint8(&current_frame()->instructions()[ip + 3]);
+          auto numFree = read_uint8(&current_frame()->instructions()[ip + 3]);
           current_frame()->ip += 3;
-          push_closure(constIndex);
+          push_closure(constIndex, numFree);
+          break;
+        }
+        case OpGetFree: {
+          auto freeIndex = read_uint8(&current_frame()->instructions()[ip + 1]);
+          current_frame()->ip += 1;
+          auto currentClosure = current_frame()->cl;
+          push(currentClosure->free[freeIndex]);
+          break;
         }
         }
       }
@@ -212,13 +220,20 @@ struct VM {
     sp++;
   }
 
-  void push_closure(int constIndex) {
+  void push_closure(int constIndex, int numFree) {
     auto constant = constants[constIndex];
     auto function = std::dynamic_pointer_cast<CompiledFunction>(constant);
     if (!function) {
       throw make_error(fmt::format("not a function: {}", constIndex));
     }
-    auto closure = std::make_shared<Closure>(function);
+
+    std::vector<std::shared_ptr<Object>> free;
+    for (int i = 0; i < numFree; i++) {
+      free.push_back(stack[sp - numFree + i]);
+    }
+    sp = sp - numFree;
+
+    auto closure = std::make_shared<Closure>(function, free);
     push(closure);
   }
 
