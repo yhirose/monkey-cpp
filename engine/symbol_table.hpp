@@ -9,6 +9,7 @@ using SymbolScope = std::string;
 const SymbolScope GlobalScope = "GLOBAL";
 const SymbolScope LocalScope = "LOCAL";
 const SymbolScope BuiltinScope = "BUILTIN";
+const SymbolScope FreeScope = "FREE";
 
 struct Symbol {
   std::string name;
@@ -25,6 +26,7 @@ struct SymbolTable {
 
   std::map<std::string, Symbol> store;
   int numDefinitions = 0;
+  std::vector<Symbol> freeSymbols;
 
   const Symbol &define(const std::string &name) {
     store.emplace(name, Symbol{
@@ -45,12 +47,29 @@ struct SymbolTable {
     return store[name];
   }
 
+  const Symbol &define_free(const Symbol &original) {
+    freeSymbols.push_back(original);
+    store.emplace(original.name, Symbol{
+                                     original.name,
+                                     FreeScope,
+                                     static_cast<int>(freeSymbols.size() - 1),
+                                 });
+    return store[original.name];
+  }
+
   std::optional<Symbol> resolve(const std::string &name) {
     auto it = store.find(name);
     if (it != store.end()) {
       return it->second;
     } else if (outer) {
-      return outer->resolve(name);
+      auto obj = outer->resolve(name);
+      if (!obj) {
+        return obj;
+      }
+      if (obj->scope == GlobalScope || obj->scope == BuiltinScope) {
+        return obj;
+      }
+      return define_free(*obj);
     }
     return std::nullopt;
   }

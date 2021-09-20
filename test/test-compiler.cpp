@@ -882,3 +882,130 @@ TEST_CASE("Builtins", "[compiler]") {
 
   run_compiler_test("([compiler]: Builtins)", tests);
 }
+
+TEST_CASE("Closure", "[compiler]") {
+  vector<CompilerTestCase> tests{
+      {
+          R"(
+            fn(a) {
+              fn(b) {
+                a + b
+              }
+            }
+          )",
+          {
+              make_compiled_function({
+                  make(OpGetFree, {0}),
+                  make(OpGetLocal, {0}),
+                  make(OpAdd, {}),
+                  make(OpReturnValue, {}),
+              }),
+              make_compiled_function({
+                  make(OpGetLocal, {0}),
+                  make(OpClosure, {0, 1}),
+                  make(OpReturnValue, {}),
+              }),
+          },
+          {
+              make(OpClosure, {1, 0}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          R"(
+            fn(a) {
+              fn(b) {
+                fn(c) {
+                  a + b + c
+                }
+              }
+            }
+          )",
+          {
+              make_compiled_function({
+                  make(OpGetFree, {0}),
+                  make(OpGetFree, {1}),
+                  make(OpAdd, {}),
+                  make(OpGetLocal, {0}),
+                  make(OpAdd, {}),
+                  make(OpReturnValue, {}),
+              }),
+              make_compiled_function({
+                  make(OpGetFree, {0}),
+                  make(OpGetLocal, {0}),
+                  make(OpClosure, {0, 2}),
+                  make(OpReturnValue, {}),
+              }),
+              make_compiled_function({
+                  make(OpGetLocal, {0}),
+                  make(OpClosure, {1, 1}),
+                  make(OpReturnValue, {}),
+              }),
+          },
+          {
+              make(OpClosure, {2, 0}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          R"(
+            let global = 55;
+
+            fn() {
+              let a = 66;
+
+              fn() {
+                let b = 77;
+
+                fn() {
+                  let c = 88;
+
+                  global + a + b + c;
+                }
+              }
+            }
+          )",
+          {
+              make_integer(55),
+              make_integer(66),
+              make_integer(77),
+              make_integer(88),
+              make_compiled_function({
+                  make(OpConstant, {3}),
+                  make(OpSetLocal, {0}),
+                  make(OpGetGlobal, {0}),
+                  make(OpGetFree, {0}),
+                  make(OpAdd, {}),
+                  make(OpGetFree, {1}),
+                  make(OpAdd, {}),
+                  make(OpGetLocal, {0}),
+                  make(OpAdd, {}),
+                  make(OpReturnValue, {}),
+              }),
+              make_compiled_function({
+                  make(OpConstant, {2}),
+                  make(OpSetLocal, {0}),
+                  make(OpGetFree, {0}),
+                  make(OpGetLocal, {0}),
+                  make(OpClosure, {4, 2}),
+                  make(OpReturnValue, {}),
+              }),
+              make_compiled_function({
+                  make(OpConstant, {1}),
+                  make(OpSetLocal, {0}),
+                  make(OpGetLocal, {0}),
+                  make(OpClosure, {5, 1}),
+                  make(OpReturnValue, {}),
+              }),
+          },
+          {
+              make(OpConstant, {0}),
+              make(OpSetGlobal, {0}),
+              make(OpClosure, {6, 0}),
+              make(OpPop, {}),
+          },
+      },
+  };
+
+  run_compiler_test("([compiler]: Closure)", tests);
+}

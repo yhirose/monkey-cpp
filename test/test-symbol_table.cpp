@@ -142,11 +142,101 @@ TEST_CASE("Define Resolve Builtins", "[symbol table]") {
   auto tables = std::vector<std::shared_ptr<SymbolTable>>{global, firstLocal,
                                                           secondLocal};
 
-  for (auto table: tables) {
+  for (auto table : tables) {
     for (const auto &sym : expected) {
       auto result = table->resolve(sym.name);
       CHECK(result.has_value());
       CHECK(result.value() == sym);
     }
+  }
+}
+
+TEST_CASE("Resolve Free", "[symbol table]") {
+  auto global = symbol_table();
+  global->define("a");
+  global->define("b");
+
+  auto firstLocal = enclosed_symbol_table(global);
+  firstLocal->define("c");
+  firstLocal->define("d");
+
+  auto secondLocal = enclosed_symbol_table(firstLocal);
+  secondLocal->define("e");
+  secondLocal->define("f");
+
+  tuple<shared_ptr<SymbolTable>, vector<Symbol>, vector<Symbol>> tests[] = {
+      {firstLocal,
+       {
+           {"a", GlobalScope, 0},
+           {"b", GlobalScope, 1},
+           {"c", LocalScope, 0},
+           {"d", LocalScope, 1},
+       },
+       {}},
+      {secondLocal,
+       {
+           {"a", GlobalScope, 0},
+           {"b", GlobalScope, 1},
+           {"c", FreeScope, 0},
+           {"d", FreeScope, 1},
+           {"e", LocalScope, 0},
+           {"f", LocalScope, 1},
+       },
+       {
+           {"c", LocalScope, 0},
+           {"d", LocalScope, 1},
+       }},
+  };
+
+  for (const auto &[table, expectedSymbols, expectedFreeSymbols] : tests) {
+    for (const auto &sym : expectedSymbols) {
+      auto result = table->resolve(sym.name);
+      CHECK(result.has_value());
+      CHECK(result.value() == sym);
+    }
+
+    CHECK(table->freeSymbols.size() == expectedFreeSymbols.size());
+
+    size_t i = 0;
+    for (const auto &sym : expectedFreeSymbols) {
+      auto result = table->freeSymbols[i];
+      CHECK(result == sym);
+      i++;
+    }
+  }
+}
+
+TEST_CASE("Resolve Unresolvable Free", "[symbol table]") {
+  auto global = symbol_table();
+  global->define("a");
+
+  auto firstLocal = enclosed_symbol_table(global);
+  firstLocal->define("c");
+
+  auto secondLocal = enclosed_symbol_table(firstLocal);
+  secondLocal->define("e");
+  secondLocal->define("f");
+
+  auto expected = vector<Symbol>{
+      {"a", GlobalScope, 0},
+      {"c", FreeScope, 0},
+      {"e", LocalScope, 0},
+      {"f", LocalScope, 1},
+  };
+
+  for (const auto &sym : expected) {
+    auto result = secondLocal->resolve(sym.name);
+    CHECK(result.has_value());
+    CHECK(result.value() == sym);
+  }
+
+  auto expectedUnresolvable = vector<string>{
+      "b",
+      "d",
+  };
+
+  for (const auto &name : expectedUnresolvable) {
+    auto result = secondLocal->resolve(name);
+    CHECK(!result.has_value());
   }
 }

@@ -219,12 +219,19 @@ struct Compiler {
       compile(ast->nodes[1]);
       if (last_instruction_is(OpPop)) { replace_last_pop_with_return(); }
       if (!last_instruction_is(OpReturnValue)) { emit(OpReturn, {}); }
+
+      auto freeSymbols = symbolTable->freeSymbols;
       auto numLocals = symbolTable->numDefinitions;
       auto instructions = leave_scope();
+
+      for (const auto &s : freeSymbols) {
+        load_symbol(s);
+      }
+
       auto compiledFn = make_compiled_function({instructions}, numLocals,
                                                parameters->nodes.size());
       auto fnIndex = add_constant(compiledFn);
-      emit(OpClosure, {fnIndex, 0});
+      emit(OpClosure, {fnIndex, static_cast<int>(freeSymbols.size())});
       break;
     }
     case "RETURN"_: {
@@ -339,6 +346,8 @@ struct Compiler {
       emit(OpGetLocal, {s.index});
     } else if (s.scope == BuiltinScope) {
       emit(OpGetBuiltin, {s.index});
+    } else if (s.scope == FreeScope) {
+      emit(OpGetFree, {s.index});
     }
   }
 };
