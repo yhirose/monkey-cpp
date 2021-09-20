@@ -51,6 +51,24 @@ void run_vm_test(const char *name, const vector<VmTestCase> &tests) {
     Compiler compiler;
     compiler.compile(ast);
 
+    // {
+    //   size_t i = 0;
+    //   for (auto constant : compiler.bytecode().constants) {
+    //     cerr << fmt::format("CONSTANT {} ({})", i, constant->name())
+    //          << std::endl;
+    //     if (constant->type() == COMPILED_FUNCTION_OBJ) {
+    //       cerr << "  Instructions: " << std::endl
+    //            << to_string(dynamic_pointer_cast<CompiledFunction>(constant)
+    //                             ->instructions,
+    //                         "\n")
+    //            << std::endl;
+    //     } else if (constant->type() == INTEGER_OBJ) {
+    //       cerr << fmt::format("  Value: {}", constant->inspect()) << std::endl << std::endl;
+    //     }
+    //     i++;
+    //   }
+    // }
+
     VM vm(compiler.bytecode());
     vm.run();
 
@@ -516,4 +534,50 @@ TEST_CASE("Closures - vm", "[vm]") {
   };
 
   run_vm_test("([vm]: Closures)", tests);
+}
+
+TEST_CASE("Recursive Functions - vm", "[vm]") {
+  vector<VmTestCase> tests{
+      {R"(
+         let countDown = fn(x) {
+           if (x == 0) {
+             return 0;
+           } else {
+             countDown(x - 1);
+           }
+         };
+         countDown(1);
+       )",
+       make_integer(0)},
+      {R"(
+         let countDown = fn(x) {
+           if (x == 0) {
+             return 0;
+           } else {
+             countDown(x - 1);
+           }
+         };
+         let wrapper = fn() {
+           countDown(1);
+         }
+         wrapper();
+       )",
+       make_integer(0)},
+      {R"(
+         let wrapper = fn() {
+           let countDown = fn(x) {
+             if (x == 0) {
+               return 0;
+             } else {
+               countDown(x - 1);
+             }
+           };
+           countDown(1);
+         }
+         wrapper();
+       )",
+       make_integer(0)},
+  };
+
+  run_vm_test("([vm]: Recursive Functions)", tests);
 }

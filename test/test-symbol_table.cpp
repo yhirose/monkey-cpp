@@ -240,3 +240,28 @@ TEST_CASE("Resolve Unresolvable Free", "[symbol table]") {
     CHECK(!result.has_value());
   }
 }
+
+TEST_CASE("Define and Resolve Function Name", "[symbol table]") {
+  auto global = symbol_table();
+  global->define_function_name("a");
+
+  auto expected = Symbol{"a", FunctionScope, 0};
+
+  auto result = global->resolve(expected.name);
+  CHECK(result.has_value());
+  CHECK(result.value() == expected);
+}
+
+TEST_CASE("Shadowing Function Name", "[symbol table]") {
+  auto global = symbol_table();
+  global->define_function_name("a");
+  global->define("a");
+
+  auto expected = Symbol{"a", GlobalScope, 0};
+
+  auto result = global->resolve(expected.name);
+  CHECK(result.has_value());
+  CHECK(result.value().name == expected.name);
+  CHECK(result.value().scope == expected.scope);
+  CHECK(result.value().index == expected.index);
+}

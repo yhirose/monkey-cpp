@@ -10,6 +10,7 @@ const SymbolScope GlobalScope = "GLOBAL";
 const SymbolScope LocalScope = "LOCAL";
 const SymbolScope BuiltinScope = "BUILTIN";
 const SymbolScope FreeScope = "FREE";
+const SymbolScope FunctionScope = "FUNCTION";
 
 struct Symbol {
   std::string name;
@@ -29,32 +30,41 @@ struct SymbolTable {
   std::vector<Symbol> freeSymbols;
 
   const Symbol &define(const std::string &name) {
-    store.emplace(name, Symbol{
-                            name,
-                            outer ? LocalScope : GlobalScope,
-                            numDefinitions,
-                        });
+    store[name] = {
+        name,
+        outer ? LocalScope : GlobalScope,
+        numDefinitions,
+    };
     numDefinitions++;
     return store[name];
   }
 
   const Symbol &define_builtin(int index, const std::string &name) {
-    store.emplace(name, Symbol{
-                            name,
-                            BuiltinScope,
-                            index,
-                        });
+    store[name] = {
+        name,
+        BuiltinScope,
+        index,
+    };
     return store[name];
   }
 
   const Symbol &define_free(const Symbol &original) {
     freeSymbols.push_back(original);
-    store.emplace(original.name, Symbol{
-                                     original.name,
-                                     FreeScope,
-                                     static_cast<int>(freeSymbols.size() - 1),
-                                 });
+    store[original.name] = {
+        original.name,
+        FreeScope,
+        static_cast<int>(freeSymbols.size() - 1),
+    };
     return store[original.name];
+  }
+
+  const Symbol &define_function_name(const std::string &name) {
+    store[name] = {
+        name,
+        FunctionScope,
+        0,
+    };
+    return store[name];
   }
 
   std::optional<Symbol> resolve(const std::string &name) {
@@ -63,9 +73,7 @@ struct SymbolTable {
       return it->second;
     } else if (outer) {
       auto obj = outer->resolve(name);
-      if (!obj) {
-        return obj;
-      }
+      if (!obj) { return obj; }
       if (obj->scope == GlobalScope || obj->scope == BuiltinScope) {
         return obj;
       }

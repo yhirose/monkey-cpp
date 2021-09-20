@@ -9,6 +9,7 @@ struct Annotation {
 
   bool to_bool() const { return std::any_cast<bool>(value); }
   int64_t to_integer() const { return std::any_cast<int64_t>(value); }
+  std::string to_string() const { return std::any_cast<std::string>(value); }
 };
 
 using Ast = peg::AstBase<Annotation>;
@@ -26,6 +27,15 @@ inline void annotate(std::shared_ptr<Ast> &ast) {
   } else {
     for (auto node : ast->nodes) {
       annotate(node);
+    }
+
+    switch (ast->tag) {
+    case "ASSIGNMENT"_: {
+      if (ast->nodes[1]->tag == "FUNCTION"_) {
+        ast->nodes[1]->value = ast->nodes[0]->token_to_string();
+      }
+      break;
+    }
     }
   }
 }
@@ -94,8 +104,9 @@ inline std::string to_string(const std::shared_ptr<Ast> &ast) {
       break;
     }
     case "FUNCTION"_: {
-      out = "fn" + to_string(ast->nodes[0]) + '{' + to_string(ast->nodes[1]) +
-            '}';
+      out = "fn" +
+            (ast->value.has_value() ? "" : '<' + ast->to_string() + '>') +
+            to_string(ast->nodes[0]) + '{' + to_string(ast->nodes[1]) + '}';
       break;
     }
     case "PARAMETERS"_: {

@@ -51,9 +51,9 @@ struct Compiler {
       break;
     }
     case "ASSIGNMENT"_: {
-      compile(ast->nodes[1]);
       auto name = std::string(ast->nodes[0]->token);
       auto symbol = symbolTable->define(name);
+      compile(ast->nodes[1]);
       if (symbol.scope == GlobalScope) {
         emit(OpSetGlobal, {symbol.index});
       } else {
@@ -211,6 +211,9 @@ struct Compiler {
     }
     case "FUNCTION"_: {
       enter_scope();
+      if (ast->value.has_value()) {
+        symbolTable->define_function_name(ast->to_string());
+      }
       auto parameters = ast->nodes[0];
       for (auto node : parameters->nodes) {
         auto name = std::string(node->token);
@@ -348,6 +351,8 @@ struct Compiler {
       emit(OpGetBuiltin, {s.index});
     } else if (s.scope == FreeScope) {
       emit(OpGetFree, {s.index});
+    } else if (s.scope == FunctionScope) {
+      emit(OpCurrentClosure, {});
     }
   }
 };

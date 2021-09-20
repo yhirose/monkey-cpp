@@ -42,6 +42,7 @@ enum OpecodeType {
   OpGetBuiltin,
   OpClosure,
   OpGetFree,
+  OpCurrentClosure,
 };
 
 struct Definition {
@@ -80,6 +81,7 @@ inline std::map<Opecode, Definition> &definitions() {
       {OpGetBuiltin, {"OpGetBuiltin", {1}}},
       {OpClosure, {"OpClosure", {2, 1}}},
       {OpGetFree, {"OpGetFree", {1}}},
+      {OpCurrentClosure, {"CurrentClosure", {}}},
   };
   return definitions_;
 }
@@ -172,14 +174,14 @@ inline std::string fmt_instruction(const Definition &def,
   return fmt::format("ERROR: unhandled operand count for {}\n", def.name);
 }
 
-inline std::string to_string(const Instructions &ins) {
+inline std::string to_string(const Instructions &ins, const char *ln = "\\n") {
   std::string out;
 
   size_t i = 0;
   while (i < ins.size()) {
     auto &def = lookup(ins[i]);
     auto [operands, read] = read_operands(def, ins, i + 1);
-    out += fmt::format(R"({:04} {}\n)", i, fmt_instruction(def, operands));
+    out += fmt::format(R"({:04} {}{})", i, fmt_instruction(def, operands), ln);
     i += 1 + read;
   }
 

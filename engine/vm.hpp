@@ -206,6 +206,11 @@ struct VM {
           push(currentClosure->free[freeIndex]);
           break;
         }
+        case OpCurrentClosure: {
+          auto currentClosure = current_frame()->cl;
+          push(currentClosure);
+          break;
+        }
         }
       }
     } catch (const std::shared_ptr<Object> &err) {
@@ -415,13 +420,16 @@ struct VM {
 
   void execute_call(int numArgs) {
     auto callee = stack[sp - 1 - numArgs];
-    if (callee->type() == CLOSURE_OBJ) {
-      call_closure(std::dynamic_pointer_cast<Closure>(callee), numArgs);
-    } else if (callee->type() == BUILTIN_OBJ) {
-      call_builtin(std::dynamic_pointer_cast<Builtin>(callee), numArgs);
-    } else {
-      throw make_error("calling non-function and non-built-in");
+    if (callee) {
+      if (callee->type() == CLOSURE_OBJ) {
+        call_closure(std::dynamic_pointer_cast<Closure>(callee), numArgs);
+        return;
+      } else if (callee->type() == BUILTIN_OBJ) {
+        call_builtin(std::dynamic_pointer_cast<Builtin>(callee), numArgs);
+        return;
+      }
     }
+    throw make_error("calling non-function and non-built-in");
   }
 
   bool is_truthy(std::shared_ptr<Object> obj) const {

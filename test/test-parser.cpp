@@ -626,3 +626,14 @@ TEST_CASE("Parsing hash literals with expression", "[parser]") {
     testFunc(val);
   }
 }
+
+TEST_CASE("Function literal with name", "[parser]") {
+  auto input = R"(let myFunction = fn() { };)";
+  auto ast = parse("([parser]: Function literal with name)", input);
+  REQUIRE(ast != nullptr);
+  REQUIRE(ast->name == "ASSIGNMENT");
+
+  auto fn = ast->nodes[1];
+  REQUIRE(fn->value.has_value());
+  REQUIRE(fn->to_string() == "myFunction");
+}

@@ -1009,3 +1009,72 @@ TEST_CASE("Closure", "[compiler]") {
 
   run_compiler_test("([compiler]: Closure)", tests);
 }
+
+TEST_CASE("Resursive Functions", "[compiler]") {
+  vector<CompilerTestCase> tests{
+      {
+          R"(
+            let countDown = fn(x) { countDown(x - 1); };
+            countDown(1);
+          )",
+          {
+              make_integer(1),
+              make_compiled_function({
+                  make(OpCurrentClosure, {}),
+                  make(OpGetLocal, {0}),
+                  make(OpConstant, {0}),
+                  make(OpSub, {}),
+                  make(OpCall, {1}),
+                  make(OpReturnValue, {}),
+              }),
+              make_integer(1),
+          },
+          {
+              make(OpClosure, {1, 0}),
+              make(OpSetGlobal, {0}),
+              make(OpGetGlobal, {0}),
+              make(OpConstant, {2}),
+              make(OpCall, {1}),
+              make(OpPop, {}),
+          },
+      },
+      {
+          R"(
+            let wrapper = fn() {
+              let countDown = fn(x) { countDown(x - 1); };
+              countDown(1);
+            };
+            wrapper();
+          )",
+          {
+              make_integer(1),
+              make_compiled_function({
+                  make(OpCurrentClosure, {}),
+                  make(OpGetLocal, {0}),
+                  make(OpConstant, {0}),
+                  make(OpSub, {}),
+                  make(OpCall, {1}),
+                  make(OpReturnValue, {}),
+              }),
+              make_integer(1),
+              make_compiled_function({
+                make(OpClosure, {1, 0}),
+                make(OpSetLocal, {0}),
+                make(OpGetLocal, {0}),
+                make(OpConstant, {2}),
+                make(OpCall, {1}),
+                make(OpReturnValue, {}),
+              }),
+          },
+          {
+              make(OpClosure, {3, 0}),
+              make(OpSetGlobal, {0}),
+              make(OpGetGlobal, {0}),
+              make(OpCall, {0}),
+              make(OpPop, {}),
+          },
+      },
+  };
+
+  run_compiler_test("([compiler]: Resursive Functions)", tests);
+}
