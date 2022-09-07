@@ -1,4 +1,4 @@
-#include "catch.hh"
+#include "catch.hpp"
 #include "test-util.hpp"
 
 #include <symbol_table.hpp>

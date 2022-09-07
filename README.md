@@ -8,17 +8,18 @@ In addition to the original Monkey language spec, this implementation supports t
 ## Install
 
 ```bash
-$ git checkout https://github.com/yhirose/monkey-cpp.git
-$ cd monkey-cpp
+$ git clone --recursive https://github.com/yhirose/monkey-cpp.git
+$ cd monkey-cpp && mkdir build && cd build
+$ cmake ..
 $ make
 
-$ ./build/monkey
+$ ./build/cli/monkey
 >> puts("hello " + "world!")
 hello world!
 null
 >> quit
 
-$ ./build/monkey examples/map.monkey
+$ ./build/cli/monkey ../examples/map.monkey
 [2, 4, 6, 8]
 15
 ```
@@ -29,10 +30,11 @@ $ ./build/monkey examples/map.monkey
 PROGRAM                <-  STATEMENTS
 
 STATEMENTS             <-  (STATEMENT ';'?)*
-STATEMENT              <-  ASSIGNMENT / RETURN / EXPRESSION
+STATEMENT              <-  ASSIGNMENT / RETURN / EXPRESSION_STATEMENT
 
 ASSIGNMENT             <-  'let' IDENTIFIER '=' EXPRESSION
 RETURN                 <-  'return' EXPRESSION
+EXPRESSION_STATEMENT   <-  EXPRESSION
 
 EXPRESSION             <-  INFIX_EXPR(PREFIX_EXPR, INFIX_OPE)
 INFIX_EXPR(ATOM, OPE)  <-  ATOM (OPE ATOM)* {
@@ -62,10 +64,10 @@ ARRAY                  <-  '[' LIST(EXPRESSION, ',') ']'
 HASH                   <-  '{' LIST(HASH_PAIR, ',') '}'
 HASH_PAIR              <-  EXPRESSION ':' EXPRESSION
 
-IDENTIFIER             <-  !KEYWORD < [a-zA-Z]+ >
+IDENTIFIER             <-  < [a-zA-Z]+ >
 INTEGER                <-  < [0-9]+ >
 STRING                 <-  < ["] < (!["] .)* > ["] >
-BOOLEAN                <-  < 'true' / 'false' >
+BOOLEAN                <-  'true' / 'false'
 NULL                   <-  'null'
 PREFIX_OPE             <-  < [-!] >
 INFIX_OPE              <-  < [-+/*<>] / '==' / '!=' >
@@ -76,5 +78,7 @@ LIST(ITEM, DELM)       <-  (ITEM (~DELM ITEM)*)?
 
 LINE_COMMENT           <-  '//' (!LINE_END .)* &LINE_END
 LINE_END               <-  '\r\n' / '\r' / '\n' / !.
+
 %whitespace            <-  ([ \t\r\n]+ / LINE_COMMENT)*
+%word                  <-  [a-zA-Z]+
 ```

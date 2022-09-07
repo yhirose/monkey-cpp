@@ -1,0 +1,6 @@
+[submodule "vendor/cpp-peglib"]
+	path = vendor/cpp-peglib
+	url = https://github.com/yhirose/cpp-peglib
+[submodule "vendor/fmt"]
+	path = vendor/fmt
+	url = https://github.com/fmtlib/fmt.git

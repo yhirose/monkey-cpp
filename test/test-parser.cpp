@@ -1,4 +1,4 @@
-﻿#include "catch.hh"
+﻿#include "catch.hpp"
 #include "test-util.hpp"
 
 using namespace std;
@@ -90,7 +90,8 @@ TEST_CASE("'return' statements", "[parser]") {
 }
 
 TEST_CASE("Identifier expression", "[parser]") {
-  auto ast = parse("([parser]: Identifier expression)", "foobar;");
+  std::string input = "foobar;";
+  auto ast = parse("([parser]: Identifier expression)", input);
   REQUIRE(ast != nullptr);
   REQUIRE(ast->name == "EXPRESSION_STATEMENT");
 
@@ -168,7 +169,8 @@ TEST_CASE("Parsing infix expression", "[parser]") {
     REQUIRE(ast != nullptr);
     REQUIRE(ast->name == "EXPRESSION_STATEMENT");
 
-    testInfixExpression(ast->nodes[0], t.leftValue, t.operatorToken, t.rightValue);
+    testInfixExpression(ast->nodes[0], t.leftValue, t.operatorToken,
+                        t.rightValue);
   }
 }
 
@@ -322,7 +324,8 @@ TEST_CASE("Boolean expression", "[parser]") {
 }
 
 TEST_CASE("If expression", "[parser]") {
-  auto ast = parse("([parser]: If expression)", "if (x < y) { x };");
+  std::string input = "if (x < y) { x };";
+  auto ast = parse("([parser]: If expression)", input);
   REQUIRE(ast != nullptr);
   REQUIRE(ast->name == "EXPRESSION_STATEMENT");
 
@@ -334,8 +337,8 @@ TEST_CASE("If expression", "[parser]") {
 }
 
 TEST_CASE("If else expression", "[parser]") {
-  auto ast =
-      parse("([parser]: If else expression)", "if (x < y) { x } else { y };");
+  std::string input = "if (x < y) { x } else { y };";
+  auto ast = parse("([parser]: If else expression)", input);
   REQUIRE(ast != nullptr);
   REQUIRE(ast->name == "EXPRESSION_STATEMENT");
 
@@ -348,8 +351,8 @@ TEST_CASE("If else expression", "[parser]") {
 }
 
 TEST_CASE("Function literal parsing", "[parser]") {
-  auto ast =
-      parse("([parser]: Function literal parser)", "fn(x, y) { x + y; }");
+  std::string input = "fn(x, y) { x + y; }";
+  auto ast = parse("([parser]: Function literal parser)", input);
   REQUIRE(ast != nullptr);
   REQUIRE(ast->name == "EXPRESSION_STATEMENT");
 
@@ -360,7 +363,7 @@ TEST_CASE("Function literal parsing", "[parser]") {
   testIdentifier(node->nodes[0]->nodes[1], "y");
 
   {
-    const auto& node2 = node->nodes[1]->nodes[0];
+    const auto &node2 = node->nodes[1]->nodes[0];
     REQUIRE(node2->name == "EXPRESSION_STATEMENT");
 
     testInfixExpression(node2->nodes[0], "x", "+", "y");
@@ -397,7 +400,7 @@ TEST_CASE("Function parameter parsing", "[parser]") {
 }
 
 TEST_CASE("Call expression parsing", "[parser]") {
-  auto input = "add(1, 2 * 3, 4 + 5);";
+  std::string input = "add(1, 2 * 3, 4 + 5);";
   auto ast = parse("([parser]: Call expression parsing)", input);
   REQUIRE(ast != nullptr);
   REQUIRE(ast->name == "EXPRESSION_STATEMENT");
@@ -448,7 +451,7 @@ TEST_CASE("Call expression parameter parsing", "[parser]") {
 }
 
 TEST_CASE("String literal expression", "[parser]") {
-  auto input = R"("hello world";)";
+  std::string input = R"("hello world";)";
   auto ast = parse("([parser]: String literal expression)", input);
   REQUIRE(ast != nullptr);
   REQUIRE(ast->name == "EXPRESSION_STATEMENT");
@@ -460,7 +463,7 @@ TEST_CASE("String literal expression", "[parser]") {
 }
 
 TEST_CASE("Parsing empty array literals", "[parser]") {
-  auto input = "[]";
+  std::string input = "[]";
   auto ast = parse("([parser]: Parsing empty array literals)", input);
   REQUIRE(ast != nullptr);
   REQUIRE(ast->name == "EXPRESSION_STATEMENT");
@@ -472,7 +475,7 @@ TEST_CASE("Parsing empty array literals", "[parser]") {
 }
 
 TEST_CASE("Parsing array literals", "[parser]") {
-  auto input = "[1, 2 * 2, 3 + 3]";
+  std::string input = "[1, 2 * 2, 3 + 3]";
   auto ast = parse("([parser]: Parsing array literals)", input);
   REQUIRE(ast != nullptr);
   REQUIRE(ast->name == "EXPRESSION_STATEMENT");
@@ -489,7 +492,7 @@ TEST_CASE("Parsing array literals", "[parser]") {
 }
 
 TEST_CASE("Parsing index expression", "[parser]") {
-  auto input = "myArray[1 + 1]";
+  std::string input = "myArray[1 + 1]";
   auto ast = parse("([parser]: Parsing index expression)", input);
   REQUIRE(ast != nullptr);
   REQUIRE(ast->name == "EXPRESSION_STATEMENT");
@@ -504,7 +507,7 @@ TEST_CASE("Parsing index expression", "[parser]") {
 }
 
 TEST_CASE("Parsing empty hash literal", "[parser]") {
-  auto input = "{}";
+  std::string input = "{}";
   auto ast = parse("([parser]: Parsing empty hash literal)", input);
   REQUIRE(ast != nullptr);
   REQUIRE(ast->name == "EXPRESSION_STATEMENT");
@@ -514,7 +517,7 @@ TEST_CASE("Parsing empty hash literal", "[parser]") {
 }
 
 TEST_CASE("Parsing hash literals string keys", "[parser]") {
-  auto input = R"({"one": 1, "two": 2, "three": 3})";
+  std::string input = R"({"one": 1, "two": 2, "three": 3})";
   auto ast = parse("([parser]: Parsing hash literals string keys)", input);
   REQUIRE(ast != nullptr);
   REQUIRE(ast->name == "EXPRESSION_STATEMENT");
@@ -539,7 +542,7 @@ TEST_CASE("Parsing hash literals string keys", "[parser]") {
 }
 
 TEST_CASE("Parsing hash literals boolean keys", "[parser]") {
-  auto input = "{true: 1, false: 2}";
+  std::string input = "{true: 1, false: 2}";
   auto ast = parse("([parser]: Parsing hash literals boolean keys)", input);
   REQUIRE(ast != nullptr);
   REQUIRE(ast->name == "EXPRESSION_STATEMENT");
@@ -563,7 +566,7 @@ TEST_CASE("Parsing hash literals boolean keys", "[parser]") {
 }
 
 TEST_CASE("Parsing hash literals integer keys", "[parser]") {
-  auto input = "{1: 1, 2: 2, 3: 3}";
+  std::string input = "{1: 1, 2: 2, 3: 3}";
   auto ast = parse("([parser]: Parsing hash literals integer keys)", input);
   REQUIRE(ast->name == "EXPRESSION_STATEMENT");
 
@@ -587,7 +590,7 @@ TEST_CASE("Parsing hash literals integer keys", "[parser]") {
 }
 
 TEST_CASE("Parsing hash literals with expression", "[parser]") {
-  auto input = R"({"one": 0 + 1, "two": 10 - 8, "three": 15 / 5})";
+  std::string input = R"({"one": 0 + 1, "two": 10 - 8, "three": 15 / 5})";
   auto ast = parse("([parser]: Parsing hash literals with expression)", input);
   REQUIRE(ast != nullptr);
   REQUIRE(ast->name == "EXPRESSION_STATEMENT");
@@ -628,7 +631,7 @@ TEST_CASE("Parsing hash literals with expression", "[parser]") {
 }
 
 TEST_CASE("Function literal with name", "[parser]") {
-  auto input = R"(let myFunction = fn() { };)";
+  std::string input = R"(let myFunction = fn() { };)";
   auto ast = parse("([parser]: Function literal with name)", input);
   REQUIRE(ast != nullptr);
   REQUIRE(ast->name == "ASSIGNMENT");

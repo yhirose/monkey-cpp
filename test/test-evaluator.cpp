@@ -1,6 +1,6 @@
 #include <evaluator.hpp>
 
-#include "catch.hh"
+#include "catch.hpp"
 #include "test-util.hpp"
 
 using namespace std;
@@ -292,7 +292,7 @@ TEST_CASE("Let statements", "[evaluator]") {
 }
 
 TEST_CASE("Function object", "[evaluator]") {
-  auto input = "fn(x) { x + 2; };";
+  std::string input = "fn(x) { x + 2; };";
 
   auto val = testEval(input);
   REQUIRE(val->type() == FUNCTION_OBJ);
@@ -327,7 +327,7 @@ TEST_CASE("Function application", "[evaluator]") {
 }
 
 TEST_CASE("Enclosing environments", "[evaluator]") {
-  auto input = R"(
+  std::string input = R"(
 let first = 10;
 let second = 10;
 let third = 10;
@@ -345,7 +345,7 @@ ourFunction(20) + first + second;
 }
 
 TEST_CASE("Closures", "[evaluator]") {
-  auto input = R"(
+  std::string input = R"(
 let newAdder = fn(x) {
   fn(y) { x + y };
 };
@@ -358,12 +358,12 @@ addTwo(2);
 }
 
 TEST_CASE("String literal", "[evaluator]") {
-  auto input = R"("Hello World!")";
+  std::string input = R"("Hello World!")";
   testStringObject(testEval(input), "Hello World!");
 }
 
 TEST_CASE("String concatenation", "[evaluator]") {
-  auto input = R"("Hello" + " " + "World!")";
+  std::string input = R"("Hello" + " " + "World!")";
   testStringObject(testEval(input), "Hello World!");
 }
 
@@ -404,7 +404,7 @@ TEST_CASE("Builtin functions", "[evaluator]") {
 }
 
 TEST_CASE("Array literals", "[evaluator]") {
-  auto input = "[1, 2 * 2, 3 + 3]";
+  std::string input = "[1, 2 * 2, 3 + 3]";
   auto val = testEval(input);
   REQUIRE(val->type() == ARRAY_OBJ);
 
@@ -443,7 +443,7 @@ TEST_CASE("Array index expressions", "[evaluator]") {
 }
 
 TEST_CASE("Hash literals", "[evaluator]") {
-  auto input = R"(let two = "two";
+  std::string input = R"(let two = "two";
 	{
 		"one": 10 - 9,
 		two: 1 + 1,
