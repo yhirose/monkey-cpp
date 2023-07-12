@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.22)
 project(test)
 
 add_executable(test-main
-  ../vendor/fmt/src/format.cc
   test-code.cpp
   test-compiler.cpp
   test-evaluator.cpp
@@ -16,7 +15,10 @@ add_executable(test-main
 )
 
 target_include_directories(test-main PRIVATE
-  ../vendor/fmt/include
-  ../vendor/cpp-peglib
+  ${peglib_SOURCE_DIR}
   ../engine
+)
+
+target_link_libraries(test-main PRIVATE
+  fmt::fmt
 )
